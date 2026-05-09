@@ -13,6 +13,7 @@
 		3DF05C402FAFA64E009E1BB2 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 3DF05C3F2FAFA64E009E1BB2 /* Realtime */; };
 		3DF05C422FAFA64E009E1BB2 /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 3DF05C412FAFA64E009E1BB2 /* Storage */; };
 		3DF05C462FAFA71D009E1BB2 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 3DF05C452FAFA71D009E1BB2 /* Kingfisher */; };
+		3DF05CAB2FAFA64E009E1BB2 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 3DF05CAA2FAFA64E009E1BB2 /* Supabase */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +68,7 @@
 				3DF05C3A2FAFA64E009E1BB2 /* Auth in Frameworks */,
 				3DF05C422FAFA64E009E1BB2 /* Storage in Frameworks */,
 				3DF05C402FAFA64E009E1BB2 /* Realtime in Frameworks */,
+				3DF05CAB2FAFA64E009E1BB2 /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -141,6 +143,7 @@
 				3DF05C3F2FAFA64E009E1BB2 /* Realtime */,
 				3DF05C412FAFA64E009E1BB2 /* Storage */,
 				3DF05C452FAFA71D009E1BB2 /* Kingfisher */,
+				3DF05CAA2FAFA64E009E1BB2 /* Supabase */,
 			);
 			productName = Apollo;
 			productReference = 3DF05C0C2FAFA312009E1BB2 /* Apollo.app */;
@@ -661,6 +664,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3DF05C432FAFA6CE009E1BB2 /* XCRemoteSwiftPackageReference "Kingfisher" */;
 			productName = Kingfisher;
+		};
+		3DF05CAA2FAFA64E009E1BB2 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3DF05C382FAFA64E009E1BB2 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
