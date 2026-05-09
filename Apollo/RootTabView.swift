@@ -60,7 +60,7 @@ struct RootTabView: View {
                 .tag(TabSelection.north)
                 .tabItem { Label("North", systemImage: "asterisk") }
 
-            ProfileTabPlaceholderView()
+            ProfileView()
                 .tag(TabSelection.profile)
                 .tabItem {
                     Label {
