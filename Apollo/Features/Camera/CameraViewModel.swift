@@ -157,7 +157,6 @@ final class CameraViewModel {
     // MARK: - Win selection
 
     func openWinPicker() {
-        guard !wins.isEmpty else { return }
         isWinPickerPresented = true
     }
 

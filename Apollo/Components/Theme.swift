@@ -33,6 +33,18 @@ extension Color {
     static let apolloReactor = Color(red: 0x9c / 255, green: 0x9c / 255, blue: 0x9c / 255)
     static let apolloReactorMuted = Color(red: 0x83 / 255, green: 0x83 / 255, blue: 0x83 / 255)
     static let apolloAvatarBorder = Color(red: 0x08 / 255, green: 0x08 / 255, blue: 0x08 / 255)
+
+    // Win List tokens (Figma node 12839-5903)
+    static let apolloSheetSurface = Color(red: 0x21 / 255, green: 0x21 / 255, blue: 0x21 / 255)
+    static let apolloWinInputBorder = Color(red: 0x6b / 255, green: 0x6b / 255, blue: 0x6b / 255)
+
+    // Win Details sheet tokens (PRD §05)
+    static let apolloWinDetailsDragPill   = Color(red: 0x22 / 255, green: 0x22 / 255, blue: 0x22 / 255)
+    static let apolloWinDetailsXButton    = Color(red: 0x1c / 255, green: 0x1c / 255, blue: 0x1c / 255)
+    static let apolloWinDetailsPillBorder = Color(red: 0x1e / 255, green: 0x1e / 255, blue: 0x1e / 255)
+    static let apolloWinDetailsPillText   = Color(red: 0x33 / 255, green: 0x33 / 255, blue: 0x33 / 255)
+    static let apolloWinDetailsRepeatMuted = Color(red: 0x88 / 255, green: 0x88 / 255, blue: 0x88 / 255)
+    static let apolloWinDetailsDeleteText = Color(red: 0x3d / 255, green: 0x15 / 255, blue: 0x15 / 255)
 }
 
 extension Font {

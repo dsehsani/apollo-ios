@@ -127,15 +127,11 @@ struct CameraView: View {
                 }
         )
         .sheet(isPresented: $viewModel.isWinPickerPresented) {
-            WinPickerSheet(
-                wins: viewModel.wins,
-                activeWinID: viewModel.activeWin?.id,
-                onSelect: viewModel.selectWin,
-                onAddWin: {
-                    viewModel.isWinPickerPresented = false
-                    onClose()
-                }
-            )
+            WinListView(onSelectWin: { item in
+                viewModel.selectWin(
+                    Win(id: item.id, name: item.name, currentStreak: item.currentStreak)
+                )
+            })
         }
         .fullScreenCover(isPresented: $viewModel.isCapturePresented) {
             CapturePlaceholderView(
