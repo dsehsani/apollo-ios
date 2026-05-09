@@ -12,6 +12,7 @@
 		3DF05C3E2FAFA64E009E1BB2 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 3DF05C3D2FAFA64E009E1BB2 /* PostgREST */; };
 		3DF05C402FAFA64E009E1BB2 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 3DF05C3F2FAFA64E009E1BB2 /* Realtime */; };
 		3DF05C422FAFA64E009E1BB2 /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 3DF05C412FAFA64E009E1BB2 /* Storage */; };
+		3DF05C462FAFA71D009E1BB2 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 3DF05C452FAFA71D009E1BB2 /* Kingfisher */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +61,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3DF05C462FAFA71D009E1BB2 /* Kingfisher in Frameworks */,
 				3DF05C3E2FAFA64E009E1BB2 /* PostgREST in Frameworks */,
 				3DF05C3C2FAFA64E009E1BB2 /* Functions in Frameworks */,
 				3DF05C3A2FAFA64E009E1BB2 /* Auth in Frameworks */,
@@ -91,6 +93,7 @@
 				3DF05C0E2FAFA312009E1BB2 /* Apollo */,
 				3DF05C1E2FAFA313009E1BB2 /* ApolloTests */,
 				3DF05C282FAFA313009E1BB2 /* ApolloUITests */,
+				3DF05C442FAFA71D009E1BB2 /* Frameworks */,
 				3DF05C0D2FAFA312009E1BB2 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -103,6 +106,13 @@
 				3DF05C252FAFA313009E1BB2 /* ApolloUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3DF05C442FAFA71D009E1BB2 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -130,6 +140,7 @@
 				3DF05C3D2FAFA64E009E1BB2 /* PostgREST */,
 				3DF05C3F2FAFA64E009E1BB2 /* Realtime */,
 				3DF05C412FAFA64E009E1BB2 /* Storage */,
+				3DF05C452FAFA71D009E1BB2 /* Kingfisher */,
 			);
 			productName = Apollo;
 			productReference = 3DF05C0C2FAFA312009E1BB2 /* Apollo.app */;
@@ -215,6 +226,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				3DF05C382FAFA64E009E1BB2 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				3DF05C432FAFA6CE009E1BB2 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3DF05C0D2FAFA312009E1BB2 /* Products */;
@@ -609,6 +621,14 @@
 				minimumVersion = 2.5.1;
 			};
 		};
+		3DF05C432FAFA6CE009E1BB2 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.9.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -636,6 +656,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3DF05C382FAFA64E009E1BB2 /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Storage;
+		};
+		3DF05C452FAFA71D009E1BB2 /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3DF05C432FAFA6CE009E1BB2 /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
