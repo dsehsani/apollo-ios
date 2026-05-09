@@ -135,9 +135,9 @@ struct FeedView: View {
                         fullScreenItem = nil
                     }
                 case .camera:
-                    CameraPlaceholderView {
+                    CameraView(onClose: {
                         fullScreenItem = nil
-                    }
+                    })
                 }
             }
             .postActionSheet(

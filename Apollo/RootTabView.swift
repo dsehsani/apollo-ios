@@ -72,7 +72,7 @@ struct RootTabView: View {
                 }
         }
         .fullScreenCover(isPresented: $showCamera) {
-            CameraPlaceholderView { showCamera = false }
+            CameraView(onClose: { showCamera = false })
         }
     }
 }

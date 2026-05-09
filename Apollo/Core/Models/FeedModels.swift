@@ -7,7 +7,7 @@
 
 import Foundation
 
-let MaxPhotosPerDay: Int = 6
+nonisolated let MaxPhotosPerDay: Int = 6
 
 enum FeedTab: String, CaseIterable, Hashable, Sendable {
     case now
