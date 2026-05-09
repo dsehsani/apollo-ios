@@ -1,0 +1,12 @@
+# Config with secrets
+Apollo/Core/Network/Config.swift
+
+# Xcode
+*.xcuserstate
+*.xccheckout
+.DS_Store
+xcuserdata/
+DerivedData/
+
+# Swift Package Manager
+.build/
