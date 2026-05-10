@@ -279,19 +279,31 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
         }
     }
 
+    /// Build tower slots (index 1…) with optional per-slot captions. Pass fewer captions
+    /// than urls to leave trailing slots without a caption.
+    private static func slotsWithCaptions(_ urls: [String], captions: [String?]) -> [PhotoSlot] {
+        urls.enumerated().map { idx, raw in
+            let cap = captions.indices.contains(idx) ? captions[idx] : nil
+            return PhotoSlot(id: UUID(), url: photo(raw), index: idx + 1, caption: cap)
+        }
+    }
+
+    // Branch: multi-line per-photo caption stack (own post)
     private static func makeOwnPost(currentUser: PostUser) -> Post {
         let now = Date()
         return Post(
             id: UUID(uuidString: "11111111-1111-1111-1111-1111111111aa")!,
             user: currentUser,
             createdAt: now.addingTimeInterval(-30 * 60),
-            caption: "Morning run before the sun got mean. Felt like flying.",
+            caption: "",
+            mainPhotoCaption: "Morning run before the sun got mean 🏃",
             photoCount: 2,
             mainPhotoURL: photo("https://images.unsplash.com/photo-1546484959-f9a381d1330d?w=1080"),
-            towerPhotos: slots([
-                "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=1080",
-                "https://images.unsplash.com/photo-1489824904134-891ab64532f1?w=1080"
-            ]),
+            towerPhotos: slotsWithCaptions(
+                ["https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=1080",
+                 "https://images.unsplash.com/photo-1489824904134-891ab64532f1?w=1080"],
+                captions: ["Meal prepped for the week", "Hit the gym after work 💪"]
+            ),
             winsCount: 2,
             reactions: [],
             commentCount: 0,
@@ -307,28 +319,33 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
         }
 
         return [
+            // Branch: multi-line per-photo caption stack (4 photos, 4 captions)
             Post(
                 id: UUID(uuidString: "22222222-0000-0000-0000-000000000001")!,
                 user: friends[0],
                 createdAt: at(6, 30),
-                caption: "First win of the day. 4 miles in, sunrise out.",
+                caption: "",
+                mainPhotoCaption: "4 miles in, sunrise out 🌅",
                 photoCount: 4,
                 mainPhotoURL: photo("https://images.unsplash.com/photo-1486218119243-13883505764c?w=1080"),
-                towerPhotos: slots([
-                    "https://images.unsplash.com/photo-1530549387789-4c1017266635?w=1080",
-                    "https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1080",
-                    "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1080"
-                ]),
+                towerPhotos: slotsWithCaptions(
+                    ["https://images.unsplash.com/photo-1530549387789-4c1017266635?w=1080",
+                     "https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1080",
+                     "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1080"],
+                    captions: ["Ice bath after", "Meal prepped for the day", nil]
+                ),
                 winsCount: 4,
                 reactions: [],
                 commentCount: 0,
                 currentUserReaction: nil
             ),
+            // Branch: single per-photo caption
             Post(
                 id: UUID(uuidString: "22222222-0000-0000-0000-000000000002")!,
                 user: friends[2],
                 createdAt: at(8, 15),
-                caption: "Shipped the redesign. Two months of iteration. Worth it.",
+                caption: "",
+                mainPhotoCaption: "Shipped the redesign. Two months of iteration. Worth it.",
                 photoCount: 1,
                 mainPhotoURL: photo("https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=1080"),
                 towerPhotos: [],
@@ -339,11 +356,12 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
                 commentCount: 2,
                 currentUserReaction: nil
             ),
+            // Branch: no captions at all (caption area hidden)
             Post(
                 id: UUID(uuidString: "22222222-0000-0000-0000-000000000003")!,
                 user: currentUser,
                 createdAt: at(9, 05),
-                caption: "Cleared the inbox. All zero. First time this year — I'm taking the W.",
+                caption: "",
                 photoCount: 2,
                 mainPhotoURL: photo("https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?w=1080"),
                 towerPhotos: slots([
@@ -356,22 +374,26 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
                 commentCount: 1,
                 currentUserReaction: nil
             ),
+            // Branch: partial per-photo captions (some photos captioned, some not)
             Post(
                 id: UUID(uuidString: "22222222-0000-0000-0000-000000000004")!,
                 user: friends[1],
                 createdAt: at(10, 22),
-                caption: "Finally cooked something I'd serve to a friend. Garlic prawn pasta.",
+                caption: "",
+                mainPhotoCaption: "Finally cooked something I'd serve to a friend",
                 photoCount: 3,
                 mainPhotoURL: photo("https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=1080"),
-                towerPhotos: slots([
-                    "https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=1080",
-                    "https://images.unsplash.com/photo-1525755662778-989d0524087e?w=1080"
-                ]),
+                towerPhotos: slotsWithCaptions(
+                    ["https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=1080",
+                     "https://images.unsplash.com/photo-1525755662778-989d0524087e?w=1080"],
+                    captions: [nil, "Garlic prawn pasta 🍤"]
+                ),
                 winsCount: 3,
                 reactions: [],
                 commentCount: 0,
                 currentUserReaction: nil
             ),
+            // Branch: legacy post.caption fallback (no per-photo captions)
             Post(
                 id: UUID(uuidString: "22222222-0000-0000-0000-000000000005")!,
                 user: friends[3],
@@ -388,11 +410,12 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
                 commentCount: 0,
                 currentUserReaction: nil
             ),
+            // Branch: no caption at all (completely empty — action buttons full-width)
             Post(
                 id: UUID(uuidString: "22222222-0000-0000-0000-000000000006")!,
                 user: friends[4],
                 createdAt: at(7, 02),
-                caption: "Made the bed. Counts.",
+                caption: "",
                 photoCount: 1,
                 mainPhotoURL: photo("https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1080"),
                 towerPhotos: [],
@@ -421,12 +444,14 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
                 id: UUID(uuidString: "33333333-0000-0000-0000-000000000001")!,
                 user: friends[0],
                 createdAt: at(20, 14),
-                caption: "Closed the gym. PR on bench. Bedtime fully earned.",
+                caption: "",
+                mainPhotoCaption: "Closed the gym. PR on bench.",
                 photoCount: 2,
                 mainPhotoURL: photo("https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1080"),
-                towerPhotos: slots([
-                    "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1080"
-                ]),
+                towerPhotos: slotsWithCaptions(
+                    ["https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1080"],
+                    captions: ["Bedtime fully earned 💤"]
+                ),
                 winsCount: 2,
                 reactions: [
                     Reaction(id: UUID(), postID: UUID(), userID: friends[2].id, username: friends[2].username, avatarURL: friends[2].avatarURL, emoji: "👑", createdAt: at(20, 20))
@@ -438,7 +463,8 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
                 id: UUID(uuidString: "33333333-0000-0000-0000-000000000002")!,
                 user: friends[2],
                 createdAt: at(18, 47),
-                caption: "Walk + sunset + zero phone for an hour.",
+                caption: "",
+                mainPhotoCaption: "Walk + sunset + zero phone for an hour.",
                 photoCount: 1,
                 mainPhotoURL: photo("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1080"),
                 towerPhotos: [],
@@ -455,7 +481,8 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
             id: UUID(),
             user: friends[3],
             createdAt: Date(),
-            caption: "Just now: pulled off my first proper handstand.",
+            caption: "",
+            mainPhotoCaption: "Just now: pulled off my first proper handstand.",
             photoCount: 1,
             mainPhotoURL: photo("https://images.unsplash.com/photo-1518611012118-696072aa579a?w=1080"),
             towerPhotos: [],

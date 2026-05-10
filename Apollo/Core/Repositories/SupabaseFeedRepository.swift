@@ -69,6 +69,9 @@ private struct FeedPostRow: Decodable {
     /// JSON array of all photo URLs ordered by position, e.g. ["https://…", "https://…"].
     /// Postgres returns this as a JSON column; decoded as [String] via a custom init.
     let photo_urls: [String]
+    /// JSON array of per-photo captions ordered by position. Nulls are preserved so
+    /// the client can align by index with photo_urls.
+    let photo_captions: [String?]
 
     let reaction_count: Int
     let comment_count: Int
@@ -77,7 +80,7 @@ private struct FeedPostRow: Decodable {
     enum CodingKeys: String, CodingKey {
         case id, user_id, caption, post_date, created_at
         case username, handle, avatar_url
-        case photo_count, wins_count, photo_url, photo_urls
+        case photo_count, wins_count, photo_url, photo_urls, photo_captions
         case reaction_count, comment_count, streak
     }
 
@@ -110,6 +113,17 @@ private struct FeedPostRow: Decodable {
             photo_urls = [first]
         } else {
             photo_urls = []
+        }
+
+        // photo_captions: same lenient pattern — JSON array of nullable strings from Postgres.
+        if let arr = try? c.decode([String?].self, forKey: .photo_captions) {
+            photo_captions = arr
+        } else if let raw = try? c.decode(String.self, forKey: .photo_captions),
+                  let data = raw.data(using: .utf8),
+                  let decoded = try? JSONDecoder().decode([String?].self, from: data) {
+            photo_captions = decoded
+        } else {
+            photo_captions = []
         }
     }
 }
@@ -229,8 +243,19 @@ final class SupabaseFeedRepository: FeedRepository, @unchecked Sendable {
         // Slot 0 becomes mainPhotoURL; slots 1..n-1 become towerPhotos.
         let allURLs = r.photo_urls.compactMap(URL.init(string:))
         let firstURL = allURLs.first ?? mainURL
+
+        // Zip captions by index: index 0 → mainPhotoCaption, 1… → tower slot captions.
+        let captions = r.photo_captions
+        let mainPhotoCaption: String? = captions.indices.contains(0)
+            ? captions[0].flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
+            : nil
+
         let towerSlots: [PhotoSlot] = allURLs.dropFirst().enumerated().map { idx, url in
-            PhotoSlot(id: UUID(), url: url, index: idx + 1)
+            let slotIndex = idx + 1
+            let slotCaption: String? = captions.indices.contains(slotIndex)
+                ? captions[slotIndex].flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
+                : nil
+            return PhotoSlot(id: UUID(), url: url, index: slotIndex, caption: slotCaption)
         }
 
         return Post(
@@ -243,6 +268,7 @@ final class SupabaseFeedRepository: FeedRepository, @unchecked Sendable {
             ),
             createdAt: createdAt,
             caption: r.caption ?? "",
+            mainPhotoCaption: mainPhotoCaption,
             photoCount: r.photo_count,
             mainPhotoURL: firstURL,
             towerPhotos: towerSlots,

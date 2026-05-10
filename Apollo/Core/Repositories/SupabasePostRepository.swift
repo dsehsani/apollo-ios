@@ -133,9 +133,13 @@ final class SupabasePostRepository: PostRepository, @unchecked Sendable {
         iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let capturedAtStr = iso.string(from: pending.capturedAt)
 
+        let captionText = privateNote.flatMap {
+            let t = $0.trimmingCharacters(in: .whitespacesAndNewlines)
+            return t.isEmpty ? nil : t
+        }
         let params = PublishPhotoParams(
             p_user_id:     currentUserID.uuidString.lowercased(),
-            p_caption:     nil,
+            p_caption:     captionText,
             p_raw_url:     pending.publicURL.absoluteString,
             p_win_id:      winID?.uuidString.lowercased(),
             p_captured_at: capturedAtStr,

@@ -349,6 +349,7 @@ private struct PhotoRow: Decodable {
     let id: UUID
     let raw_url: String
     let position: Int
+    let caption: String?
 }
 
 private struct PhotoRawRow: Decodable {
