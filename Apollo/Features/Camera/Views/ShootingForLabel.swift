@@ -34,7 +34,7 @@ struct ShootingForLabel: View {
                         }
                         Image(systemName: "chevron.up")
                             .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(Color.apolloErrorToastBody)
+                            .foregroundStyle(Color.apolloText)
                     }
                 } else {
                     HStack(spacing: 6) {

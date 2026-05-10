@@ -62,10 +62,56 @@ private struct FeedPostRow: Decodable {
     let username: String
     let handle: String?
     let avatar_url: String?
+    let photo_count: Int
+    let wins_count: Int
+    /// First photo URL (position 0) as a convenience scalar from the view.
     let photo_url: String?
+    /// JSON array of all photo URLs ordered by position, e.g. ["https://…", "https://…"].
+    /// Postgres returns this as a JSON column; decoded as [String] via a custom init.
+    let photo_urls: [String]
+
     let reaction_count: Int
     let comment_count: Int
     let streak: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id, user_id, caption, post_date, created_at
+        case username, handle, avatar_url
+        case photo_count, wins_count, photo_url, photo_urls
+        case reaction_count, comment_count, streak
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id            = try c.decode(UUID.self,    forKey: .id)
+        user_id       = try c.decode(UUID.self,    forKey: .user_id)
+        caption       = try c.decodeIfPresent(String.self, forKey: .caption)
+        post_date     = try c.decode(String.self,  forKey: .post_date)
+        created_at    = try c.decode(String.self,  forKey: .created_at)
+        username      = try c.decode(String.self,  forKey: .username)
+        handle        = try c.decodeIfPresent(String.self, forKey: .handle)
+        avatar_url    = try c.decodeIfPresent(String.self, forKey: .avatar_url)
+        photo_count   = try c.decode(Int.self,     forKey: .photo_count)
+        wins_count    = try c.decode(Int.self,     forKey: .wins_count)
+        photo_url     = try c.decodeIfPresent(String.self, forKey: .photo_url)
+        reaction_count = try c.decode(Int.self,    forKey: .reaction_count)
+        comment_count  = try c.decode(Int.self,    forKey: .comment_count)
+        streak         = try c.decode(Int.self,    forKey: .streak)
+
+        // photo_urls is a JSON column: Postgres returns it as a raw JSON string or nil.
+        // Try decoding as [String] directly; fall back to a single-element array from photo_url.
+        if let arr = try? c.decode([String].self, forKey: .photo_urls) {
+            photo_urls = arr
+        } else if let raw = try? c.decode(String.self, forKey: .photo_urls),
+                  let data = raw.data(using: .utf8),
+                  let decoded = try? JSONDecoder().decode([String].self, from: data) {
+            photo_urls = decoded
+        } else if let first = photo_url {
+            photo_urls = [first]
+        } else {
+            photo_urls = []
+        }
+    }
 }
 
 final class SupabaseFeedRepository: FeedRepository, @unchecked Sendable {
@@ -163,6 +209,15 @@ final class SupabaseFeedRepository: FeedRepository, @unchecked Sendable {
     private func mapRow(_ r: FeedPostRow) -> Post {
         let mainURL = r.photo_url.flatMap(URL.init(string:))
         let createdAt = parseTimestamp(r.created_at) ?? Date()
+
+        // Build ordered PhotoSlots from the full photo_urls array.
+        // Slot 0 becomes mainPhotoURL; slots 1..n-1 become towerPhotos.
+        let allURLs = r.photo_urls.compactMap(URL.init(string:))
+        let firstURL = allURLs.first ?? mainURL
+        let towerSlots: [PhotoSlot] = allURLs.dropFirst().enumerated().map { idx, url in
+            PhotoSlot(id: UUID(), url: url, index: idx + 1)
+        }
+
         return Post(
             id: r.id,
             user: PostUser(
@@ -173,10 +228,10 @@ final class SupabaseFeedRepository: FeedRepository, @unchecked Sendable {
             ),
             createdAt: createdAt,
             caption: r.caption ?? "",
-            photoCount: mainURL == nil ? 0 : 1,
-            mainPhotoURL: mainURL,
-            towerPhotos: [],
-            winsCount: 0,
+            photoCount: r.photo_count,
+            mainPhotoURL: firstURL,
+            towerPhotos: towerSlots,
+            winsCount: r.wins_count,
             reactions: [],
             commentCount: r.comment_count,
             currentUserReaction: nil

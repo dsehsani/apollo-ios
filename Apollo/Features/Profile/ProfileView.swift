@@ -38,6 +38,9 @@ struct ProfileView: View {
             .toolbar(.hidden, for: .navigationBar)
         }
         .task { await viewModel.load() }
+        .onReceive(NotificationCenter.default.publisher(for: .apolloProfileShouldRefresh)) { _ in
+            Task { await viewModel.refresh() }
+        }
         .sheet(isPresented: $showBannerEditSheet) {
             bannerEditSheet
         }

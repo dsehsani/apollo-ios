@@ -19,6 +19,12 @@ enum AnalyticsEvent: String {
     case commentSubmitted    = "comment_submitted"
     case commentDeleted      = "comment_deleted"
     case replyStarted        = "reply_started"
+    // Camera / capture flow (PRD §Camera)
+    case cameraOpened        = "camera_opened"
+    case shutterTapped       = "shutter_tapped"
+    case usePhotoTapped      = "use_photo_tapped"
+    case retakeTapped        = "retake_tapped"
+    case privateNoteAdded    = "private_note_added"
 }
 
 enum Analytics {

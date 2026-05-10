@@ -31,8 +31,15 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Apollo uses the camera to document your daily wins.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Apollo reads your photo library so you can post an existing photo as your daily win.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>GoudyBookletter1911-Regular.ttf</string>

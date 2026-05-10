@@ -4,8 +4,8 @@
 //
 //  Camera screen — Apollo's primary capture surface. Composes the live
 //  viewfinder, the "Shooting for" label, the nav bar, and the bottom
-//  controls. Owns presentation of the win picker, permission state, and
-//  capture confirmation. Honors swipe-down dismissal per PRD §5.
+//  controls. After shutter tap, presents CameraCaptureReviewView
+//  full-screen. Honors swipe-down dismissal per PRD §5.
 //
 
 import SwiftUI
@@ -18,16 +18,25 @@ struct CameraView: View {
 
     var onClose: () -> Void
 
+    private let winListRepository: WinListRepository
+
     init(
         repository: CameraRepository = MockCameraRepository(),
+        postRepository: PostRepository = MockPostRepository(),
+        winListRepository: WinListRepository = MockWinListRepository(),
         onClose: @escaping () -> Void
     ) {
-        _viewModel = State(initialValue: CameraViewModel(repository: repository))
+        _viewModel = State(initialValue: CameraViewModel(
+            repository: repository,
+            postRepository: postRepository
+        ))
+        self.winListRepository = winListRepository
         self.onClose = onClose
     }
 
-    init(viewModel: CameraViewModel, onClose: @escaping () -> Void) {
+    init(viewModel: CameraViewModel, winListRepository: WinListRepository = MockWinListRepository(), onClose: @escaping () -> Void) {
         _viewModel = State(initialValue: viewModel)
+        self.winListRepository = winListRepository
         self.onClose = onClose
     }
 
@@ -50,18 +59,16 @@ struct CameraView: View {
     private var activeBody: some View {
         @Bindable var viewModel = viewModel
         return ZStack(alignment: .top) {
-            Color.black.ignoresSafeArea()
+            Color.apolloBackground.ignoresSafeArea()
 
             GeometryReader { proxy in
                 let viewfinderHeight = proxy.size.width * 5.0 / 4.0
                 VStack(spacing: 0) {
-                    Color.black
-                        .frame(maxHeight: .infinity)
+                    Color.apolloBackground.frame(maxHeight: .infinity)
                     viewfinderContent
                         .frame(width: proxy.size.width, height: viewfinderHeight)
                         .clipped()
-                    Color.black
-                        .frame(maxHeight: .infinity)
+                    Color.apolloBackground.frame(maxHeight: .infinity)
                 }
             }
             .ignoresSafeArea()
@@ -78,7 +85,7 @@ struct CameraView: View {
                 ShootingForLabel(
                     activeWin: viewModel.activeWin,
                     onTapWinName: viewModel.openWinPicker,
-                    onTapAddAWin: { onClose() }
+                    onTapAddAWin: viewModel.openWinPicker
                 )
                 .padding(.bottom, 20)
 
@@ -88,6 +95,7 @@ struct CameraView: View {
                 }
 
                 CameraBottomControls(
+                    thumbnailURL: viewModel.todaySummary.gridURL,
                     isShutterPressed: viewModel.shutterPressed,
                     isFlipping: viewModel.isFlipping,
                     isAtMaxPhotos: viewModel.isAtMaxPhotos,
@@ -97,7 +105,7 @@ struct CameraView: View {
                 .padding(.bottom, 8)
             }
 
-            if let message = viewModel.transientErrorMessage {
+            if let message = viewModel.transientErrorMessage, !viewModel.isCaptureReviewPresented {
                 ErrorToast(
                     message: message,
                     actionLabel: nil,
@@ -112,45 +120,31 @@ struct CameraView: View {
         .gesture(
             DragGesture(minimumDistance: 12)
                 .onChanged { value in
-                    if value.translation.height > 0 {
-                        dragOffset = value.translation.height
-                    }
+                    if value.translation.height > 0 { dragOffset = value.translation.height }
                 }
                 .onEnded { value in
                     if value.translation.height > 120 {
                         onClose()
                     } else {
-                        withAnimation(.spring(response: 0.25)) {
-                            dragOffset = 0
-                        }
+                        withAnimation(.spring(response: 0.25)) { dragOffset = 0 }
                     }
                 }
         )
         .sheet(isPresented: $viewModel.isWinPickerPresented) {
-            WinListView(onSelectWin: { item in
-                viewModel.selectWin(
-                    Win(id: item.id, name: item.name, currentStreak: item.currentStreak)
-                )
-            })
-        }
-        .fullScreenCover(isPresented: $viewModel.isCapturePresented) {
-            CapturePlaceholderView(
-                image: viewModel.lastCapturedImage,
-                win: viewModel.activeWin,
-                onRetake: viewModel.dismissCapture,
-                onUsePhoto: viewModel.presentDevelop
-            )
-        }
-        .fullScreenCover(isPresented: $viewModel.isDevelopPresented) {
-            DevelopView(
-                image: viewModel.lastCapturedImage ?? UIImage(),
-                win: viewModel.activeWin,
-                onRetake: viewModel.retakeFromDevelop,
-                onConfirm: {
-                    viewModel.confirmDevelop()
-                    onClose()
+            WinListView(
+                repository: winListRepository,
+                onSelectWin: { item in
+                    viewModel.selectWin(
+                        Win(id: item.id, name: item.name, currentStreak: item.currentStreak)
+                    )
                 }
             )
+        }
+        .fullScreenCover(isPresented: $viewModel.isCaptureReviewPresented) {
+            CameraCaptureReviewView(viewModel: viewModel, onClose: onClose)
+        }
+        .onChange(of: viewModel.didCommitPhoto) { _, committed in
+            if committed { onClose() }
         }
     }
 

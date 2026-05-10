@@ -2,13 +2,18 @@
 //  CameraBottomControls.swift
 //  Apollo
 //
-//  Bottom row of the Camera screen: shutter button (center) and camera flip
-//  (right). Thumbnail removed — Figma Camera-Active has no bottom-left control.
+//  Bottom row of the Camera screen: thumbnail grid (left), shutter (center),
+//  camera flip (right). PRD §4D.
+//
+//  Shutter sizes: outer ring 72pt, inner fill 60pt (normal) / 54pt (pressed).
+//  Thumbnail: 56×56pt, rounded corner 8pt, shows today's first photo or
+//  a #141414 placeholder.
 //
 
 import SwiftUI
 
 struct CameraBottomControls: View {
+    let thumbnailURL: URL?
     let isShutterPressed: Bool
     let isFlipping: Bool
     let isAtMaxPhotos: Bool
@@ -17,8 +22,7 @@ struct CameraBottomControls: View {
 
     var body: some View {
         HStack {
-            Color.clear
-                .frame(width: 44, height: 44)
+            ThumbnailView(url: thumbnailURL)
 
             Spacer()
 
@@ -37,6 +41,40 @@ struct CameraBottomControls: View {
     }
 }
 
+// MARK: - Subviews
+
+private struct ThumbnailView: View {
+    let url: URL?
+
+    var body: some View {
+        Group {
+            if let url {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    default:
+                        placeholderRect
+                    }
+                }
+            } else {
+                placeholderRect
+            }
+        }
+        .frame(width: 56, height: 56)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .accessibilityLabel("Today's photos")
+        .accessibilityHidden(url == nil)
+    }
+
+    private var placeholderRect: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(Color.apolloSkeleton) // #141414
+    }
+}
+
 private struct ShutterButton: View {
     let isPressed: Bool
     let isDisabled: Bool
@@ -47,14 +85,18 @@ private struct ShutterButton: View {
             ZStack {
                 Circle()
                     .stroke(Color.apolloStroke, lineWidth: 2)
-                    .frame(width: 80, height: 80)
+                    .frame(width: 72, height: 72)
 
                 Circle()
                     .fill(isDisabled ? Color.apolloMuted : Color.apolloText)
-                    .frame(width: isPressed ? 56 : 66, height: isPressed ? 56 : 66)
+                    .frame(
+                        width:  isPressed ? 54 : 60,
+                        height: isPressed ? 54 : 60
+                    )
                     .opacity(isDisabled ? 0.5 : 1.0)
+                    .animation(.spring(response: 0.1), value: isPressed)
             }
-            .frame(width: 88, height: 88)
+            .frame(width: 80, height: 80)
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -94,6 +136,7 @@ private struct FlipButton: View {
     VStack {
         Spacer()
         CameraBottomControls(
+            thumbnailURL: nil,
             isShutterPressed: false,
             isFlipping: false,
             isAtMaxPhotos: false,

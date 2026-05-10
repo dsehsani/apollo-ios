@@ -163,9 +163,13 @@ struct FeedView: View {
                         fullScreenItem = nil
                     }
                 case .camera:
-                    CameraView(onClose: {
-                        fullScreenItem = nil
-                    })
+                    let userID = supabase.auth.currentUser?.id ?? UUID()
+                    CameraView(
+                        repository: SupabaseCameraRepository(currentUserID: userID),
+                        postRepository: SupabasePostRepository(currentUserID: userID),
+                        winListRepository: SupabaseWinListRepository(currentUserID: userID),
+                        onClose: { fullScreenItem = nil }
+                    )
                 }
             }
             .postActionSheet(
@@ -200,6 +204,9 @@ struct FeedView: View {
                 guard let targetID,
                       let post = viewModel.posts.first(where: { $0.id == targetID }) else { return }
                 sheetItem = .customEmoji(post)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .apolloFeedShouldRefresh)) { _ in
+                Task { await viewModel.refresh() }
             }
         }
         .preferredColorScheme(.dark)

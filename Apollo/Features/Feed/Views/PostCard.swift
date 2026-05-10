@@ -33,12 +33,10 @@ struct PostCard: View {
                 post: post,
                 featuredIndex: viewModel.featuredIndex(for: post),
                 onFeaturedPhotoTap: {
-                    onPhotoTap(post, viewModel.featuredIndex(for: post))
+                    onPhotoTap(post, 0)
                 },
-                onTowerPhotoTap: { towerIdx in
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        viewModel.setFeaturedIndex(towerIdx + 1, for: post)
-                    }
+                onTowerPhotoTap: { tapIdx in
+                    onPhotoTap(post, tapIdx)
                 }
             )
             .padding(.top, 8)

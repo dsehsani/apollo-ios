@@ -18,6 +18,7 @@
 //  Image for a KFImage(currentUser.avatarURL) clipped to a Circle.
 //
 
+import Supabase
 import SwiftUI
 
 struct RootTabView: View {
@@ -73,7 +74,13 @@ struct RootTabView: View {
                 }
         }
         .fullScreenCover(isPresented: $showCamera) {
-            CameraView(onClose: { showCamera = false })
+            let userID = sessionStore.currentUser?.id ?? supabase.auth.currentUser?.id ?? UUID()
+            CameraView(
+                repository: SupabaseCameraRepository(currentUserID: userID),
+                postRepository: SupabasePostRepository(currentUserID: userID),
+                winListRepository: SupabaseWinListRepository(currentUserID: userID),
+                onClose: { showCamera = false }
+            )
         }
     }
 }

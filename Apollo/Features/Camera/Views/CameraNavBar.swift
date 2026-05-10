@@ -24,11 +24,9 @@ struct CameraNavBar: View {
 
             Spacer(minLength: 0)
 
-            Image("ApolloWordmark")
-                .resizable()
-                .renderingMode(.original)
-                .aspectRatio(contentMode: .fit)
-                .frame(height: 28)
+            Text("Apollo.")
+                .font(.goudyItalic(24))
+                .foregroundStyle(Color.apolloText)
                 .accessibilityLabel("Apollo")
 
             Spacer(minLength: 0)
