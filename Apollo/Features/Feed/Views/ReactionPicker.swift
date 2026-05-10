@@ -7,20 +7,21 @@ import SwiftUI
 
 struct ReactionPicker: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    var currentReaction: ReactionEmoji?
-    var onSelect: (ReactionEmoji) -> Void
+    /// Raw emoji string for the current user's active reaction, e.g. "❤️".
+    var currentReaction: String?
+    var onSelect: (String) -> Void
     var onPlusTap: () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
-            ForEach(ReactionEmoji.pickerOrder, id: \.self) { emoji in
+            ForEach(ReactionEmoji.postPickerOrder, id: \.self) { emoji in
                 Button {
-                    onSelect(emoji)
+                    onSelect(emoji.rawValue)
                 } label: {
                     Text(emoji.rawValue)
                         .font(.system(size: 20))
                         .padding(.horizontal, 2)
-                        .opacity(currentReaction == emoji ? 1.0 : 0.95)
+                        .opacity(currentReaction == emoji.rawValue ? 1.0 : 0.95)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(accessibilityLabel(for: emoji))
@@ -31,7 +32,7 @@ struct ReactionPicker: View {
                     .foregroundStyle(Color.apolloText)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("More reactions")
+            .accessibilityLabel("More emojis")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -49,7 +50,7 @@ struct ReactionPicker: View {
     private func accessibilityLabel(for emoji: ReactionEmoji) -> String {
         switch emoji {
         case .heart: return "React with heart"
-        case .fire: return "React with fire"
+        case .fire:  return "React with fire"
         case .crown: return "React with crown"
         }
     }

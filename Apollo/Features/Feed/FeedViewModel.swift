@@ -25,7 +25,7 @@ final class FeedViewModel {
     private static let pageSize = 20
     private static let prefetchTrigger = 3
 
-    private let repository: FeedRepository
+    let repository: FeedRepository
 
     var tab: FeedTab = .now
     var phase: Phase = .loading
@@ -39,9 +39,12 @@ final class FeedViewModel {
     var expandedCaptions: Set<UUID> = []
     var featuredPhotoIndex: [UUID: Int] = [:]
     var activeReactionPicker: UUID?
+    /// Set when the user taps '+' in the reaction picker; triggers the custom-emoji sheet.
+    var customEmojiTarget: UUID?
     var transientErrorMessage: String?
 
     private var newPostsTask: Task<Void, Never>?
+    private var reactionUpdatesTask: Task<Void, Never>?
     private var loadTask: Task<Void, Never>?
 
     var currentUserID: UUID { repository.currentUserID }
@@ -63,6 +66,8 @@ final class FeedViewModel {
     func onDisappear() {
         newPostsTask?.cancel()
         newPostsTask = nil
+        reactionUpdatesTask?.cancel()
+        reactionUpdatesTask = nil
     }
 
     // MARK: - Loading
@@ -136,9 +141,9 @@ final class FeedViewModel {
 
     private func subscribeRealtime() {
         newPostsTask?.cancel()
-        let stream = repository.newPostsStream(tab: tab)
+        let newPostStream = repository.newPostsStream(tab: tab)
         newPostsTask = Task { [weak self] in
-            for await post in stream {
+            for await post in newPostStream {
                 guard let self else { return }
                 await MainActor.run {
                     if !self.posts.contains(where: { $0.id == post.id })
@@ -147,6 +152,35 @@ final class FeedViewModel {
                     }
                 }
             }
+        }
+
+        reactionUpdatesTask?.cancel()
+        let reactionStream = repository.reactionUpdatesStream()
+        reactionUpdatesTask = Task { [weak self] in
+            for await update in reactionStream {
+                guard let self else { return }
+                await MainActor.run {
+                    self.applyReactionUpdate(update)
+                }
+            }
+        }
+    }
+
+    private func applyReactionUpdate(_ update: ReactionUpdate) {
+        switch update {
+        case .added(let reaction):
+            guard reaction.userID != currentUserID,
+                  let idx = posts.firstIndex(where: { $0.id == reaction.postID }) else { return }
+            var post = posts[idx]
+            post.reactions.removeAll { $0.userID == reaction.userID }
+            post.reactions.append(reaction)
+            posts[idx] = post
+
+        case .removed(let reactionID, let postID):
+            guard let idx = posts.firstIndex(where: { $0.id == postID }) else { return }
+            var post = posts[idx]
+            post.reactions.removeAll { $0.id == reactionID }
+            posts[idx] = post
         }
     }
 
@@ -162,14 +196,21 @@ final class FeedViewModel {
 
     // MARK: - Reactions
 
-    func toggleReaction(post: Post, emoji: ReactionEmoji) {
+    func toggleReaction(post: Post, emoji: String) {
         let postID = post.id
         let previous = currentUserReaction(in: post)
         let isSame = (previous == emoji)
-        let optimisticEmoji: ReactionEmoji? = isSame ? nil : emoji
+        let optimisticEmoji: String? = isSame ? nil : emoji
 
         applyReactionOptimistically(postID: postID, newEmoji: optimisticEmoji)
         activeReactionPicker = nil
+
+        let isCustom = !ReactionEmoji.postPickerSet.contains(emoji)
+        if let optimisticEmoji {
+            Analytics.track(.postReactionAdded, ["emoji": optimisticEmoji, "post_id": postID.uuidString, "is_custom": isCustom])
+        } else {
+            Analytics.track(.postReactionRemoved, ["emoji": previous ?? "", "post_id": postID.uuidString])
+        }
 
         Task { [weak self] in
             guard let self else { return }
@@ -188,12 +229,12 @@ final class FeedViewModel {
         }
     }
 
-    private func currentUserReaction(in post: Post) -> ReactionEmoji? {
+    private func currentUserReaction(in post: Post) -> String? {
         if let cached = post.currentUserReaction { return cached }
         return post.reactions.first(where: { $0.userID == currentUserID })?.emoji
     }
 
-    private func applyReactionOptimistically(postID: UUID, newEmoji: ReactionEmoji?) {
+    private func applyReactionOptimistically(postID: UUID, newEmoji: String?) {
         guard let idx = posts.firstIndex(where: { $0.id == postID }) else { return }
         var post = posts[idx]
         post.reactions.removeAll { $0.userID == currentUserID }
@@ -240,6 +281,15 @@ final class FeedViewModel {
 
     func dismissReactionPicker() {
         activeReactionPicker = nil
+    }
+
+    func requestCustomEmoji(for postID: UUID) {
+        activeReactionPicker = nil
+        customEmojiTarget = postID
+    }
+
+    func dismissCustomEmoji() {
+        customEmojiTarget = nil
     }
 
     // MARK: - Delete / Report

@@ -100,7 +100,7 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
         return Quote(text: text, date: Calendar.current.startOfDay(for: Date()))
     }
 
-    func addReaction(postID: UUID, emoji: ReactionEmoji) async throws {
+    func addReaction(postID: UUID, emoji: String) async throws {
         try await Task.sleep(nanoseconds: 250_000_000)
         lock.withLock {
             mutate(postID: postID) { post in
@@ -148,6 +148,36 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
 
     func reportPost(postID: UUID, reason: String) async throws {
         try await Task.sleep(nanoseconds: 200_000_000)
+    }
+
+    func reactionUpdatesStream() -> AsyncStream<ReactionUpdate> {
+        AsyncStream { continuation in
+            let task = Task { [weak self] in
+                try? await Task.sleep(nanoseconds: 6_000_000_000)
+                guard let self, !Task.isCancelled else {
+                    continuation.finish()
+                    return
+                }
+                // Simulate a remote user reacting to the first loaded post.
+                let targetID = lock.withLock {
+                    todayPosts.first(where: { $0.user.id != currentUserID })?.id
+                }
+                if let targetID {
+                    let newReaction = Reaction(
+                        id: UUID(),
+                        postID: targetID,
+                        userID: MockFeedRepository.friends[4].id,
+                        username: MockFeedRepository.friends[4].username,
+                        avatarURL: MockFeedRepository.friends[4].avatarURL,
+                        emoji: "🦾",
+                        createdAt: Date()
+                    )
+                    continuation.yield(.added(newReaction))
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
     }
 
     func newPostsStream(tab: FeedTab) -> AsyncStream<Post> {
@@ -275,9 +305,10 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
                 ]),
                 winsCount: 4,
                 reactions: [
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[1].id, username: friends[1].username, avatarURL: friends[1].avatarURL, emoji: .fire, createdAt: at(6, 32)),
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[2].id, username: friends[2].username, avatarURL: friends[2].avatarURL, emoji: .heart, createdAt: at(6, 35)),
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[3].id, username: friends[3].username, avatarURL: friends[3].avatarURL, emoji: .crown, createdAt: at(6, 40)),
+                    Reaction(id: UUID(), postID: UUID(), userID: friends[1].id, username: friends[1].username, avatarURL: friends[1].avatarURL, emoji: "🔥", createdAt: at(6, 32)),
+                    Reaction(id: UUID(), postID: UUID(), userID: friends[2].id, username: friends[2].username, avatarURL: friends[2].avatarURL, emoji: "❤️", createdAt: at(6, 35)),
+                    Reaction(id: UUID(), postID: UUID(), userID: friends[3].id, username: friends[3].username, avatarURL: friends[3].avatarURL, emoji: "👑", createdAt: at(6, 40)),
+                    Reaction(id: UUID(), postID: UUID(), userID: friends[4].id, username: friends[4].username, avatarURL: friends[4].avatarURL, emoji: "🦾", createdAt: at(6, 45)),
                 ],
                 commentCount: 5,
                 currentUserReaction: nil
@@ -292,7 +323,7 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
                 towerPhotos: [],
                 winsCount: 1,
                 reactions: [
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[0].id, username: friends[0].username, avatarURL: friends[0].avatarURL, emoji: .crown, createdAt: at(8, 16)),
+                    Reaction(id: UUID(), postID: UUID(), userID: friends[0].id, username: friends[0].username, avatarURL: friends[0].avatarURL, emoji: "👑", createdAt: at(8, 16)),
                 ],
                 commentCount: 2,
                 currentUserReaction: nil
@@ -309,7 +340,7 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
                 ]),
                 winsCount: 2,
                 reactions: [
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[1].id, username: friends[1].username, avatarURL: friends[1].avatarURL, emoji: .heart, createdAt: at(9, 7)),
+                    Reaction(id: UUID(), postID: UUID(), userID: friends[1].id, username: friends[1].username, avatarURL: friends[1].avatarURL, emoji: "❤️", createdAt: at(9, 7)),
                 ],
                 commentCount: 1,
                 currentUserReaction: nil
@@ -340,8 +371,8 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
                 towerPhotos: [],
                 winsCount: 1,
                 reactions: [
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[2].id, username: friends[2].username, avatarURL: friends[2].avatarURL, emoji: .heart, createdAt: at(11, 50)),
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[0].id, username: friends[0].username, avatarURL: friends[0].avatarURL, emoji: .heart, createdAt: at(11, 51)),
+                    Reaction(id: UUID(), postID: UUID(), userID: friends[2].id, username: friends[2].username, avatarURL: friends[2].avatarURL, emoji: "❤️", createdAt: at(11, 50)),
+                    Reaction(id: UUID(), postID: UUID(), userID: friends[0].id, username: friends[0].username, avatarURL: friends[0].avatarURL, emoji: "❤️", createdAt: at(11, 51)),
                 ],
                 commentCount: 0,
                 currentUserReaction: nil
@@ -356,13 +387,13 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
                 towerPhotos: [],
                 winsCount: 1,
                 reactions: [
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[0].id, username: friends[0].username, avatarURL: friends[0].avatarURL, emoji: .fire, createdAt: at(7, 4)),
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[3].id, username: friends[3].username, avatarURL: friends[3].avatarURL, emoji: .fire, createdAt: at(7, 5)),
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[1].id, username: friends[1].username, avatarURL: friends[1].avatarURL, emoji: .crown, createdAt: at(7, 6)),
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[2].id, username: friends[2].username, avatarURL: friends[2].avatarURL, emoji: .heart, createdAt: at(7, 7)),
+                    Reaction(id: UUID(), postID: UUID(), userID: friends[0].id, username: friends[0].username, avatarURL: friends[0].avatarURL, emoji: "🔥", createdAt: at(7, 4)),
+                    Reaction(id: UUID(), postID: UUID(), userID: friends[3].id, username: friends[3].username, avatarURL: friends[3].avatarURL, emoji: "🔥", createdAt: at(7, 5)),
+                    Reaction(id: UUID(), postID: UUID(), userID: friends[1].id, username: friends[1].username, avatarURL: friends[1].avatarURL, emoji: "👑", createdAt: at(7, 6)),
+                    Reaction(id: UUID(), postID: UUID(), userID: friends[2].id, username: friends[2].username, avatarURL: friends[2].avatarURL, emoji: "❤️", createdAt: at(7, 7)),
                 ],
                 commentCount: 8,
-                currentUserReaction: .fire
+                currentUserReaction: "🔥"
             ),
         ]
     }
@@ -387,7 +418,7 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
                 ]),
                 winsCount: 2,
                 reactions: [
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[2].id, username: friends[2].username, avatarURL: friends[2].avatarURL, emoji: .crown, createdAt: at(20, 20))
+                    Reaction(id: UUID(), postID: UUID(), userID: friends[2].id, username: friends[2].username, avatarURL: friends[2].avatarURL, emoji: "👑", createdAt: at(20, 20))
                 ],
                 commentCount: 3,
                 currentUserReaction: nil

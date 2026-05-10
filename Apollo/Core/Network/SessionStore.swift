@@ -44,14 +44,50 @@ final class SessionStore: ObservableObject {
     }
 
     private func bootstrap() async {
+        // #region agent log
+        let dbLog: (String, String, [String: Any]) -> Void = { hypothesisId, message, data in
+            let ts = Date().timeIntervalSince1970
+            var payload: [String: Any] = [
+                "sessionId": "a1df08", "runId": "run1", "hypothesisId": hypothesisId,
+                "location": "SessionStore.swift:bootstrap",
+                "message": message, "timestamp": Int64(ts * 1000)
+            ]
+            payload.merge(data) { _, new in new }
+            if let json = try? JSONSerialization.data(withJSONObject: payload),
+               let line = String(data: json, encoding: .utf8) {
+                let logPath = "/Volumes/Darius_SSD/Apollo/Apollo/.cursor/debug-a1df08.log"
+                let entry = line + "\n"
+                if let fh = FileHandle(forWritingAtPath: logPath) {
+                    fh.seekToEndOfFile(); fh.write(entry.data(using: .utf8)!); try? fh.close()
+                } else {
+                    try? entry.write(toFile: logPath, atomically: false, encoding: .utf8)
+                }
+            }
+        }
+        dbLog("B", "bootstrap_called", ["objectId": "\(ObjectIdentifier(self).hashValue)"])
+        // #endregion
+
         // Cold-launch session restore. If there is no saved session this just
         // returns nil — perfectly fine, we'll fall through to onboarding.
+        // #region agent log
+        dbLog("A", "before_session_fetch", [:])
+        // #endregion
         if let existing = try? await supabase.auth.session {
+            // #region agent log
+            dbLog("A+D", "session_fetch_result", ["isExpired": existing.isExpired, "hasAccessToken": !existing.accessToken.isEmpty])
+            // #endregion
             self.session = existing
+        } else {
+            // #region agent log
+            dbLog("A", "session_fetch_result_nil", [:])
+            // #endregion
         }
         self.isBootstrapping = false
 
         for await (event, session) in supabase.auth.authStateChanges {
+            // #region agent log
+            dbLog("B+C", "authStateChange", ["event": "\(event)", "hasSession": session != nil, "isExpired": session?.isExpired ?? false])
+            // #endregion
             switch event {
             case .signedIn, .tokenRefreshed, .userUpdated, .initialSession:
                 self.session = session

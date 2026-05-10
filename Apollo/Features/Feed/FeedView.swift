@@ -8,6 +8,7 @@
 //  routes them to placeholder screens that future agents can swap in.
 //
 
+import Supabase
 import SwiftUI
 
 struct FeedView: View {
@@ -19,8 +20,11 @@ struct FeedView: View {
     @State private var isActionSheetPresented = false
     @State private var deleteCandidate: Post?
 
-    init(repository: FeedRepository = MockFeedRepository()) {
-        _viewModel = State(initialValue: FeedViewModel(repository: repository))
+    init(repository: FeedRepository? = nil) {
+        let repo: FeedRepository = repository ?? SupabaseFeedRepository(
+            currentUserID: supabase.auth.currentUser?.id ?? UUID()
+        )
+        _viewModel = State(initialValue: FeedViewModel(repository: repo))
     }
 
     init(viewModel: FeedViewModel) {
@@ -121,11 +125,24 @@ struct FeedView: View {
                 case .comments(let post):
                     CommentsSheetPlaceholder(post: post)
                 case .reactions(let post):
-                    ReactionsBreakdownSheetPlaceholder(post: post)
+                    ReactionsBreakdownSheet(post: post, repository: viewModel.repository)
                 case .report(let post):
                     ReportFlowPlaceholder(post: post) {
                         sheetItem = nil
                     }
+                case .customEmoji(let post):
+                    EmojiPickerSheet(
+                        onSelect: { emoji in
+                            sheetItem = nil
+                            viewModel.toggleReaction(post: post, emoji: emoji)
+                            Analytics.track(.customEmojiUsed, ["emoji": emoji, "post_id": post.id.uuidString])
+                        },
+                        onDismiss: {
+                            sheetItem = nil
+                            viewModel.dismissCustomEmoji()
+                        }
+                    )
+                    .presentationDetents([.height(260)])
                 }
             }
             .fullScreenCover(item: $fullScreenItem) { item in
@@ -168,6 +185,11 @@ struct FeedView: View {
             }
             .onAppear { viewModel.onAppear() }
             .onDisappear { viewModel.onDisappear() }
+            .onChange(of: viewModel.customEmojiTarget) { _, targetID in
+                guard let targetID,
+                      let post = viewModel.posts.first(where: { $0.id == targetID }) else { return }
+                sheetItem = .customEmoji(post)
+            }
         }
         .preferredColorScheme(.dark)
     }
@@ -255,6 +277,7 @@ struct FeedView: View {
             },
             onReactionsLineTap: { post in
                 sheetItem = .reactions(post)
+                Analytics.track(.breakdownOpened, ["post_id": post.id.uuidString, "total_reactions": post.reactions.count])
             },
             onPhotoTap: { post, index in
                 fullScreenItem = .photoViewer(post, index)
@@ -295,12 +318,14 @@ enum FeedSheetItem: Identifiable {
     case comments(Post)
     case reactions(Post)
     case report(Post)
+    case customEmoji(Post)
 
     var id: String {
         switch self {
-        case .comments(let p): return "comments-\(p.id)"
-        case .reactions(let p): return "reactions-\(p.id)"
-        case .report(let p): return "report-\(p.id)"
+        case .comments(let p):    return "comments-\(p.id)"
+        case .reactions(let p):   return "reactions-\(p.id)"
+        case .report(let p):      return "report-\(p.id)"
+        case .customEmoji(let p): return "customEmoji-\(p.id)"
         }
     }
 }

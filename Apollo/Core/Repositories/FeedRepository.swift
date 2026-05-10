@@ -14,9 +14,10 @@ protocol FeedRepository: Sendable {
 
     func fetchFeed(tab: FeedTab, cursor: FeedCursor?, limit: Int) async throws -> FeedPage
     func dailyQuote() async throws -> Quote
-    func addReaction(postID: UUID, emoji: ReactionEmoji) async throws
+    func addReaction(postID: UUID, emoji: String) async throws
     func removeReaction(postID: UUID) async throws
     func fetchReactionsBreakdown(postID: UUID) async throws -> [Reaction]
+    func reactionUpdatesStream() -> AsyncStream<ReactionUpdate>
     func deletePost(postID: UUID) async throws
     func reportPost(postID: UUID, reason: String) async throws
     func newPostsStream(tab: FeedTab) -> AsyncStream<Post>

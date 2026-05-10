@@ -72,7 +72,7 @@ struct PostCard: View {
                                 viewModel.toggleReaction(post: post, emoji: emoji)
                             },
                             onPlusTap: {
-                                viewModel.dismissReactionPicker()
+                                viewModel.requestCustomEmoji(for: post.id)
                             }
                         )
                         .offset(y: -52)

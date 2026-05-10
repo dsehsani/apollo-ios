@@ -46,9 +46,9 @@ struct MockProfileRepository: ProfileRepositoryProtocol {
             ],
             caption: "church, hike, and more",
             reactions: [
-                Reaction(id: UUID(), postID: UUID(), userID: UUID(), username: "darius_ehsani", avatarURL: nil, emoji: .heart, createdAt: .now),
-                Reaction(id: UUID(), postID: UUID(), userID: UUID(), username: "riley", avatarURL: nil, emoji: .fire, createdAt: .now),
-                Reaction(id: UUID(), postID: UUID(), userID: UUID(), username: "mira", avatarURL: nil, emoji: .crown, createdAt: .now),
+                Reaction(id: UUID(), postID: UUID(), userID: UUID(), username: "darius_ehsani", avatarURL: nil, emoji: "❤️", createdAt: .now),
+                Reaction(id: UUID(), postID: UUID(), userID: UUID(), username: "riley", avatarURL: nil, emoji: "🔥", createdAt: .now),
+                Reaction(id: UUID(), postID: UUID(), userID: UUID(), username: "mira", avatarURL: nil, emoji: "👑", createdAt: .now),
             ],
             commentCount: 4
         )

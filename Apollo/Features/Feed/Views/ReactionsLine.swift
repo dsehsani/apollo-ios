@@ -92,11 +92,11 @@ struct ReactionsLine: View {
 
 #Preview {
     let r = [
-        Reaction(id: UUID(), postID: UUID(), userID: UUID(), username: "jayden", avatarURL: nil, emoji: .heart, createdAt: .now),
-        Reaction(id: UUID(), postID: UUID(), userID: UUID(), username: "rildy", avatarURL: nil, emoji: .fire, createdAt: .now),
-        Reaction(id: UUID(), postID: UUID(), userID: UUID(), username: "mira", avatarURL: nil, emoji: .crown, createdAt: .now),
+        Reaction(id: UUID(), postID: UUID(), userID: UUID(), username: "jayden", avatarURL: nil, emoji: "❤️", createdAt: .now),
+        Reaction(id: UUID(), postID: UUID(), userID: UUID(), username: "rildy", avatarURL: nil, emoji: "🔥", createdAt: .now),
+        Reaction(id: UUID(), postID: UUID(), userID: UUID(), username: "mira", avatarURL: nil, emoji: "👑", createdAt: .now),
     ]
-    return ReactionsLine(reactions: r, onTap: {})
+    ReactionsLine(reactions: r, onTap: {})
         .background(Color.apolloBackground)
         .preferredColorScheme(.dark)
 }

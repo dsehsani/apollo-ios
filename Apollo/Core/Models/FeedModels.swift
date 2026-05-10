@@ -26,7 +26,15 @@ enum ReactionEmoji: String, CaseIterable, Hashable, Sendable {
     case fire = "🔥"
     case crown = "👑"
 
-    static let pickerOrder: [ReactionEmoji] = [.heart, .fire, .crown]
+    static let postPickerOrder: [ReactionEmoji] = [.heart, .fire, .crown]
+
+    /// All standard post-picker emoji raw values. Used to distinguish custom reactions.
+    static var postPickerSet: Set<String> { Set(allCases.map(\.rawValue)) }
+}
+
+enum ReactionUpdate: Sendable {
+    case added(Reaction)
+    case removed(reactionID: UUID, postID: UUID)
 }
 
 struct PostUser: Identifiable, Hashable, Sendable {
@@ -53,9 +61,10 @@ struct Post: Identifiable, Hashable, Sendable {
     var winsCount: Int
     var reactions: [Reaction]
     var commentCount: Int
-    var currentUserReaction: ReactionEmoji?
+    /// Raw emoji string for the current user's reaction, e.g. "❤️" or "🦾" for custom.
+    var currentUserReaction: String?
 
-    var reactionsByEmoji: [ReactionEmoji: Int] {
+    var reactionsByEmoji: [String: Int] {
         Dictionary(grouping: reactions, by: { $0.emoji }).mapValues { $0.count }
     }
 }
@@ -66,7 +75,8 @@ struct Reaction: Identifiable, Hashable, Sendable {
     var userID: UUID
     var username: String
     var avatarURL: URL?
-    var emoji: ReactionEmoji
+    /// Raw emoji character string — e.g. "❤️", "🔥", "👑", or any custom emoji.
+    var emoji: String
     var createdAt: Date
 }
 
