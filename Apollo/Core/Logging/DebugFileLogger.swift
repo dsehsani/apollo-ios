@@ -13,12 +13,16 @@
 //
 
 import Foundation
+import os
 
 enum DebugFileLog {
     static let endpoint = URL(string: "http://127.0.0.1:7809/ingest/f2764775-e9ec-4875-ad36-b763e1f86c68")!
-    static let sessionID = "ad90ff"
+    static let sessionID = "b2d358"
+    static let consoleLog = OSLog(subsystem: "DariusEhsani.Apollo", category: "AgentDebug")
 
-    /// Best-effort log via HTTP POST to the local Cursor debug endpoint.
+    /// Best-effort log via HTTP POST to the local Cursor debug endpoint AND os_log
+    /// so logs are visible in the Xcode/macOS Console even when the simulator
+    /// can't reach the host's loopback (e.g. real device, network policy).
     static func log(
         _ hypothesisId: String,
         _ location: String,
@@ -35,6 +39,17 @@ enum DebugFileLog {
         if !data.isEmpty {
             payload["data"] = sanitize(data)
         }
+        // Console fallback — visible via `xcrun simctl spawn booted log stream
+        // --predicate 'subsystem == "DariusEhsani.Apollo"'` or in Console.app.
+        let dataStr: String
+        if let body = try? JSONSerialization.data(withJSONObject: payload, options: []),
+           let str = String(data: body, encoding: .utf8) {
+            dataStr = str
+        } else {
+            dataStr = "<unencodable>"
+        }
+        os_log("%{public}@", log: consoleLog, type: .info, dataStr)
+
         guard let body = try? JSONSerialization.data(withJSONObject: payload, options: []) else {
             return
         }

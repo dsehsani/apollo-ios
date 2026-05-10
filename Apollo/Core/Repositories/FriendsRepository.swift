@@ -9,10 +9,12 @@ import Foundation
 
 protocol FriendsRepositoryProtocol: Sendable {
     func fetchFriendsData() async throws -> FriendsData
-    func acceptRequest(id: UUID) async throws
+    func acceptRequest(id: UUID, requesterUserID: UUID) async throws
     func declineRequest(id: UUID) async throws
     func sendFriendRequest(to userID: UUID) async throws
     func dismissRecommendation(id: UUID) async throws
+    func searchUsers(query: String) async throws -> [UserSearchResult]
+    func fetchAffiliateCode() async throws -> String?
 }
 
 enum FriendsRepositoryError: Error, Sendable {
@@ -21,7 +23,7 @@ enum FriendsRepositoryError: Error, Sendable {
     case unknown
 }
 
-// MARK: - Mock
+// MARK: - Mock (used in SwiftUI previews only)
 
 struct MockFriendsRepository: FriendsRepositoryProtocol {
     func fetchFriendsData() async throws -> FriendsData {
@@ -30,6 +32,7 @@ struct MockFriendsRepository: FriendsRepositoryProtocol {
             requests: [
                 FriendRequest(
                     id: UUID(),
+                    requesterUserID: UUID(),
                     displayName: "Jayden Betts",
                     handle: "angryjayden",
                     avatarURL: nil,
@@ -42,41 +45,24 @@ struct MockFriendsRepository: FriendsRepositoryProtocol {
                     displayName: "Enoch De Leon",
                     handle: "coool_boy_e",
                     avatarURL: nil,
-                    subLabel: "In your contacts"
+                    subLabel: "New on Apollo"
                 ),
                 RecommendedUser(
                     id: UUID(),
                     displayName: "Angel Gomez",
                     handle: "angel_gomez",
                     avatarURL: nil,
-                    subLabel: "7 Mutuals"
-                ),
-                RecommendedUser(
-                    id: UUID(),
-                    displayName: "Marge Kellogg",
-                    handle: "grandma_vibes",
-                    avatarURL: nil,
-                    subLabel: "10 Mutuals"
-                ),
-                RecommendedUser(
-                    id: UUID(),
-                    displayName: "Rildy Gomez",
-                    handle: "rildygomez",
-                    avatarURL: nil,
-                    subLabel: "In your contacts"
+                    subLabel: "New on Apollo"
                 )
             ],
-            contacts: [
-                InviteContact(id: UUID(), displayName: "Yao Ming",       handle: "yaoming89",   avatarURL: nil),
-                InviteContact(id: UUID(), displayName: "Jayden Belts",   handle: "lockedin",    avatarURL: nil),
-                InviteContact(id: UUID(), displayName: "Lebron James",   handle: "lebronjames", avatarURL: nil),
-                InviteContact(id: UUID(), displayName: "jaden_bots",     handle: "jaden_bots",  avatarURL: nil)
-            ]
+            contacts: []
         )
     }
 
-    func acceptRequest(id: UUID) async throws {}
+    func acceptRequest(id: UUID, requesterUserID: UUID) async throws {}
     func declineRequest(id: UUID) async throws {}
     func sendFriendRequest(to userID: UUID) async throws {}
     func dismissRecommendation(id: UUID) async throws {}
+    func searchUsers(query: String) async throws -> [UserSearchResult] { [] }
+    func fetchAffiliateCode() async throws -> String? { nil }
 }

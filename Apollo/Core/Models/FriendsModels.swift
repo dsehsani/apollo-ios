@@ -9,6 +9,8 @@ import Foundation
 
 struct FriendRequest: Identifiable, Hashable, Sendable {
     let id: UUID
+    /// The auth/users.id of the person who sent the request (needed for reverse-row insert on accept).
+    let requesterUserID: UUID
     var displayName: String
     var handle: String
     var avatarURL: URL?
@@ -35,4 +37,21 @@ struct FriendsData: Sendable {
     var requests: [FriendRequest]
     var recommended: [RecommendedUser]
     var contacts: [InviteContact]
+}
+
+// MARK: - Friendship state for search results
+
+enum FriendshipState: Hashable, Sendable {
+    case none
+    case requestedByMe
+    case incomingRequest(friendshipID: UUID)
+    case friends
+}
+
+struct UserSearchResult: Identifiable, Hashable, Sendable {
+    let id: UUID
+    var displayName: String
+    var handle: String
+    var avatarURL: URL?
+    var state: FriendshipState
 }

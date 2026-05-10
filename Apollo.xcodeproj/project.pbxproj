@@ -179,8 +179,6 @@
 				3DF05C1E2FAFA313009E1BB2 /* ApolloTests */,
 			);
 			name = ApolloTests;
-			packageProductDependencies = (
-			);
 			productName = ApolloTests;
 			productReference = 3DF05C1B2FAFA313009E1BB2 /* ApolloTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -202,8 +200,6 @@
 				3DF05C282FAFA313009E1BB2 /* ApolloUITests */,
 			);
 			name = ApolloUITests;
-			packageProductDependencies = (
-			);
 			productName = ApolloUITests;
 			productReference = 3DF05C252FAFA313009E1BB2 /* ApolloUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";

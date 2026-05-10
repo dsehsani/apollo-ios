@@ -20,11 +20,14 @@ struct FeedView: View {
     @State private var isActionSheetPresented = false
     @State private var deleteCandidate: Post?
 
+    let currentUser: CurrentUser?
+
     init(
         repository: FeedRepository? = nil,
         commentsRepository: CommentsRepository? = nil,
         currentUser: CurrentUser? = nil
     ) {
+        self.currentUser = currentUser
         let userID = currentUser?.id ?? supabase.auth.currentUser?.id ?? UUID()
         let feedRepo: FeedRepository = repository ?? SupabaseFeedRepository(currentUserID: userID)
         let commentsRepo: CommentsRepository = commentsRepository ?? SupabaseCommentsRepository(
@@ -39,6 +42,7 @@ struct FeedView: View {
     }
 
     init(viewModel: FeedViewModel) {
+        self.currentUser = nil
         _viewModel = State(initialValue: viewModel)
     }
 
@@ -126,7 +130,7 @@ struct FeedView: View {
                 case .notifications:
                     NotificationsPlaceholderView()
                 case .profile(let user):
-                    ProfilePlaceholderView(user: user)
+                    ProfileView(userID: user.id, currentUser: currentUser)
                 case .shareStrip(let post):
                     ShareStripPlaceholder(post: post)
                 }
@@ -159,7 +163,7 @@ struct FeedView: View {
             .fullScreenCover(item: $fullScreenItem) { item in
                 switch item {
                 case .photoViewer(let post, let index):
-                    FullScreenPhotoViewerPlaceholder(post: post, startingIndex: index) {
+                    FullScreenPhotoViewer(post: post, startingIndex: index) {
                         fullScreenItem = nil
                     }
                 case .camera:

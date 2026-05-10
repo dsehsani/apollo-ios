@@ -49,7 +49,7 @@ struct RootTabView: View {
                 .tag(TabSelection.feed)
                 .tabItem { Label("Feed", systemImage: "house") }
 
-            FriendsView()
+            FriendsView(currentUser: sessionStore.currentUser)
                 .tag(TabSelection.friends)
                 .tabItem { Label("Friends", systemImage: "person.2") }
 
@@ -62,16 +62,29 @@ struct RootTabView: View {
                 .tag(TabSelection.north)
                 .tabItem { Label("North", systemImage: "asterisk") }
 
-            ProfileView()
+            ProfileView(currentUser: sessionStore.currentUser)
                 .tag(TabSelection.profile)
                 .tabItem {
                     Label {
                         Text("Profile")
                     } icon: {
-                        Image("ProfileTabAvatarPlaceholder")
-                            .renderingMode(.original)
+                        if let avatar = sessionStore.currentUserAvatarImage {
+                            Image(uiImage: avatar)
+                                .renderingMode(.original)
+                        } else {
+                            Image("ProfileTabAvatarPlaceholder")
+                                .renderingMode(.original)
+                        }
                     }
                 }
+        }
+        .onAppear {
+            // #region agent log
+            DebugFileLog.log("H1", "RootTabView.onAppear", "TabView appeared", [
+                "hasAvatarURL": sessionStore.currentUser?.avatarURL != nil,
+                "avatarURL": sessionStore.currentUser?.avatarURL?.absoluteString ?? "<nil>",
+            ])
+            // #endregion
         }
         .fullScreenCover(isPresented: $showCamera) {
             let userID = sessionStore.currentUser?.id ?? supabase.auth.currentUser?.id ?? UUID()

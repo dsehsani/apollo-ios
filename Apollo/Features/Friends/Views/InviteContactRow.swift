@@ -10,9 +10,13 @@ import SwiftUI
 
 struct InviteContactRow: View {
     let contact: InviteContact
+    var affiliateCode: String?
 
     private var shareMessage: String {
-        "Join me on Apollo — the app where I track my daily wins. Download it here: https://apollo.app"
+        if let code = affiliateCode {
+            return "Join me on Apollo — the app where I track my daily wins. Use my code \(code) for 10% off Pro."
+        }
+        return "Join me on Apollo — the app where I track my daily wins. Download it here: https://apollo.app"
     }
 
     var body: some View {
