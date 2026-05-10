@@ -48,13 +48,17 @@ struct PhotoSlot: Identifiable, Hashable, Sendable {
     let id: UUID
     var url: URL?
     var index: Int
+    var caption: String?
 }
 
 struct Post: Identifiable, Hashable, Sendable {
     let id: UUID
     var user: PostUser
     var createdAt: Date
+    /// Legacy post-level caption kept for backward compatibility.
     var caption: String
+    /// Caption for the first photo (position 0). Populated from photos.caption.
+    var mainPhotoCaption: String?
     var photoCount: Int
     var mainPhotoURL: URL?
     var towerPhotos: [PhotoSlot]
@@ -71,6 +75,7 @@ struct Post: Identifiable, Hashable, Sendable {
         user: PostUser,
         createdAt: Date,
         caption: String,
+        mainPhotoCaption: String? = nil,
         photoCount: Int,
         mainPhotoURL: URL?,
         towerPhotos: [PhotoSlot],
@@ -84,6 +89,7 @@ struct Post: Identifiable, Hashable, Sendable {
         self.user = user
         self.createdAt = createdAt
         self.caption = caption
+        self.mainPhotoCaption = mainPhotoCaption
         self.photoCount = photoCount
         self.mainPhotoURL = mainPhotoURL
         self.towerPhotos = towerPhotos

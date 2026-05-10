@@ -2,7 +2,7 @@
 //  PostCard.swift
 //  Apollo
 //
-//  Renders one post: header, photo area, then a row pairing the caption
+//  Renders one post: header, photo area, then a row pairing the caption stack
 //  (right-aligned, max 215pt) with the action buttons (comment, react), and
 //  the reactions line below. All callbacks bubble up to FeedView so navigation
 //  lives at the screen level.
@@ -42,13 +42,12 @@ struct PostCard: View {
             .padding(.top, 8)
 
             HStack(alignment: .top, spacing: 0) {
-                CaptionView(
-                    caption: post.caption,
-                    isExpanded: viewModel.expandedCaptions.contains(post.id),
-                    onTapMore: { viewModel.toggleCaptionExpansion(post.id) }
-                )
-                .frame(maxWidth: 215, alignment: .trailing)
-                .padding(.leading, 16)
+                let captionStack = CaptionStackView(post: post)
+                if !captionStack.isEmpty {
+                    captionStack
+                        .frame(maxWidth: 215, alignment: .trailing)
+                        .padding(.leading, 16)
+                }
 
                 Spacer(minLength: 8)
 

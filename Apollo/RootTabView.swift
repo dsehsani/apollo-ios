@@ -2,8 +2,8 @@
 //  RootTabView.swift
 //  Apollo
 //
-//  Top-level shell: a native SwiftUI TabView with five tabs. iOS 26 applies
-//  liquid glass to the tab bar automatically.
+//  Top-level shell: a native SwiftUI TabView with five tabs. The tab bar uses
+//  the standard system material on iOS 17; iOS 26+ upgrades it to Liquid Glass.
 //
 //  Tabs: Feed, Friends, Camera, North, Profile.
 //
