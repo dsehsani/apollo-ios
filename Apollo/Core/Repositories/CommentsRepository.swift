@@ -23,12 +23,6 @@ protocol CommentsRepository: Sendable {
     /// Delete own comment. Throws `.forbidden` if caller doesn't own the comment.
     func deleteComment(commentID: UUID) async throws
 
-    /// Upsert a reaction on a comment (one reaction per user per comment).
-    func addCommentReaction(commentID: UUID, emoji: String) async throws -> CommentReaction
-
-    /// Remove the current user's reaction from a comment.
-    func removeCommentReaction(commentID: UUID) async throws
-
     /// Realtime stream of new comments posted by others on this post.
     func newCommentsStream(postID: UUID) -> AsyncStream<Comment>
 }

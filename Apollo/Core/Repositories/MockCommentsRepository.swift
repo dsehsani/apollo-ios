@@ -37,7 +37,6 @@ final class MockCommentsRepository: CommentsRepository, @unchecked Sendable {
     // MARK: - CommentsRepository
 
     func fetchComments(postID: UUID, before: Date?, limit: Int) async throws -> [Comment] {
-        print("[MockCommentsRepository] fetchComments called for postID=\(postID)")
         try await Task.sleep(nanoseconds: 300_000_000)
         if forced == .error { throw CommentsRepositoryError.network }
 
@@ -62,7 +61,6 @@ final class MockCommentsRepository: CommentsRepository, @unchecked Sendable {
             return Array(filtered.prefix(limit))
         }
 
-        print("[MockCommentsRepository] returning \(result.count) comments for postID=\(postID)")
         return result
     }
 
@@ -114,38 +112,6 @@ final class MockCommentsRepository: CommentsRepository, @unchecked Sendable {
                let parentIdx = comments.firstIndex(where: { $0.id == parentID }) {
                 comments[parentIdx].replyCount = max(0, comments[parentIdx].replyCount - 1)
             }
-        }
-    }
-
-    func addCommentReaction(commentID: UUID, emoji: String) async throws -> CommentReaction {
-        try await Task.sleep(nanoseconds: 200_000_000)
-        if forced == .error { throw CommentsRepositoryError.network }
-
-        let reaction = CommentReaction(
-            id: UUID(),
-            commentID: commentID,
-            userID: currentUserID,
-            username: currentUser.username,
-            avatarURL: currentUser.avatarURL,
-            emoji: emoji,
-            createdAt: Date()
-        )
-
-        lock.withLock {
-            guard let idx = comments.firstIndex(where: { $0.id == commentID }) else { return }
-            comments[idx].reactions.removeAll { $0.userID == currentUserID }
-            comments[idx].reactions.append(reaction)
-        }
-        return reaction
-    }
-
-    func removeCommentReaction(commentID: UUID) async throws {
-        try await Task.sleep(nanoseconds: 200_000_000)
-        if forced == .error { throw CommentsRepositoryError.network }
-
-        lock.withLock {
-            guard let idx = comments.firstIndex(where: { $0.id == commentID }) else { return }
-            comments[idx].reactions.removeAll { $0.userID == currentUserID }
         }
     }
 
@@ -227,17 +193,7 @@ final class MockCommentsRepository: CommentsRepository, @unchecked Sendable {
                 text: "The streak stays alive! 🔥",
                 createdAt: now.addingTimeInterval(-15 * 60),
                 parentID: nil,
-                reactions: [
-                    CommentReaction(
-                        id: UUID(),
-                        commentID: c3ID,
-                        userID: users[0].id,
-                        username: users[0].username,
-                        avatarURL: users[0].avatarURL,
-                        emoji: "❤️",
-                        createdAt: now.addingTimeInterval(-13 * 60)
-                    ),
-                ],
+                reactions: [],
                 replyCount: 0
             ),
             // reply to c2
@@ -271,26 +227,7 @@ final class MockCommentsRepository: CommentsRepository, @unchecked Sendable {
                 text: "Show up — that's the whole game. You're living proof.",
                 createdAt: now.addingTimeInterval(-45 * 60),
                 parentID: nil,
-                reactions: [
-                    CommentReaction(
-                        id: UUID(),
-                        commentID: c2ID,
-                        userID: users[2].id,
-                        username: users[2].username,
-                        avatarURL: users[2].avatarURL,
-                        emoji: "❤️",
-                        createdAt: now.addingTimeInterval(-44 * 60)
-                    ),
-                    CommentReaction(
-                        id: UUID(),
-                        commentID: c2ID,
-                        userID: users[3].id,
-                        username: users[3].username,
-                        avatarURL: users[3].avatarURL,
-                        emoji: "😂",
-                        createdAt: now.addingTimeInterval(-43 * 60)
-                    ),
-                ],
+                reactions: [],
                 replyCount: 2
             ),
             Comment(

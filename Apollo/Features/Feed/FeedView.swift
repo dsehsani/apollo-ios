@@ -20,13 +20,18 @@ struct FeedView: View {
     @State private var isActionSheetPresented = false
     @State private var deleteCandidate: Post?
 
-    init(repository: FeedRepository? = nil, commentsRepository: CommentsRepository? = nil) {
-        let userID = supabase.auth.currentUser?.id ?? UUID()
+    init(
+        repository: FeedRepository? = nil,
+        commentsRepository: CommentsRepository? = nil,
+        currentUser: CurrentUser? = nil
+    ) {
+        let userID = currentUser?.id ?? supabase.auth.currentUser?.id ?? UUID()
         let feedRepo: FeedRepository = repository ?? SupabaseFeedRepository(currentUserID: userID)
-        // Default to the in-memory mock until the Supabase `comments` and
-        // `comment_reactions` tables are provisioned. Same temporary pattern
-        // used for several FeedRepository methods today.
-        let commentsRepo: CommentsRepository = commentsRepository ?? MockCommentsRepository()
+        let commentsRepo: CommentsRepository = commentsRepository ?? SupabaseCommentsRepository(
+            currentUserID: userID,
+            username: currentUser?.username ?? "you",
+            avatarURL: currentUser?.avatarURL
+        )
         _viewModel = State(initialValue: FeedViewModel(
             repository: feedRepo,
             commentsRepository: commentsRepo

@@ -15,7 +15,6 @@ struct CommentsSheet: View {
     var repository: CommentsRepository
 
     @State private var viewModel: CommentsViewModel
-    @State private var customEmojiTarget: CommentIDItem?
     @FocusState private var inputFocused: Bool
 
     init(post: Post, repository: CommentsRepository) {
@@ -68,22 +67,6 @@ struct CommentsSheet: View {
                 }
             )
         }
-        .sheet(item: $customEmojiTarget) { item in
-            EmojiPickerSheet(
-                onSelect: { emoji in
-                    customEmojiTarget = nil
-                    if let comment = viewModel.comments.first(where: { $0.id == item.id }) {
-                        viewModel.toggleCommentReaction(comment: comment, emoji: emoji)
-                    }
-                    viewModel.dismissCustomEmoji()
-                },
-                onDismiss: {
-                    customEmojiTarget = nil
-                    viewModel.dismissCustomEmoji()
-                }
-            )
-            .presentationDetents([.height(260)])
-        }
         .alert(
             "Delete this comment?",
             isPresented: .init(
@@ -105,9 +88,6 @@ struct CommentsSheet: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.hidden)
         .preferredColorScheme(.dark)
-        .onChange(of: viewModel.customEmojiTarget) { _, targetID in
-            customEmojiTarget = targetID.map { CommentIDItem(id: $0) }
-        }
         .task {
             viewModel.onAppear()
             Analytics.track(.commentsOpened, [
@@ -190,8 +170,6 @@ struct CommentsSheet: View {
                     CommentRow(
                         comment: comment,
                         isOwn: viewModel.isOwnComment(comment),
-                        currentReaction: viewModel.currentUserCommentReaction(in: comment),
-                        isPickerActive: viewModel.activeReactionPicker == comment.id,
                         onReply: {
                             viewModel.startReply(to: comment)
                             inputFocused = true
@@ -201,19 +179,6 @@ struct CommentsSheet: View {
                         },
                         onReport: {
                             viewModel.transientErrorMessage = "Report submitted."
-                        },
-                        onReactionPickerTap: {
-                            if viewModel.activeReactionPicker == comment.id {
-                                viewModel.dismissReactionPicker()
-                            } else {
-                                viewModel.openReactionPicker(for: comment.id)
-                            }
-                        },
-                        onReactionSelect: { emoji in
-                            viewModel.toggleCommentReaction(comment: comment, emoji: emoji)
-                        },
-                        onReactionPlusTap: {
-                            viewModel.requestCustomEmoji(for: comment.id)
                         }
                     )
                     .id(comment.id)
@@ -232,19 +197,7 @@ struct CommentsSheet: View {
             .padding(.bottom, 8)
         }
         .scrollDismissesKeyboard(.interactively)
-        .simultaneousGesture(
-            TapGesture().onEnded {
-                if viewModel.activeReactionPicker != nil {
-                    viewModel.dismissReactionPicker()
-                }
-            }
-        )
     }
-}
-
-// Small wrapper so UUID can drive sheet(item:) which requires Identifiable.
-private struct CommentIDItem: Identifiable {
-    let id: UUID
 }
 
 // MARK: - Previews

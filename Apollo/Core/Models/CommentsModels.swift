@@ -41,28 +41,6 @@ struct Comment: Identifiable, Hashable, Sendable {
     var parentID: UUID?
     var reactions: [CommentReaction]
     var replyCount: Int
-
-    var reactionsGrouped: [String: [CommentReaction]] {
-        Dictionary(grouping: reactions, by: { $0.emoji })
-    }
-}
-
-// MARK: - Emoji set
-
-enum CommentEmoji: String, CaseIterable, Hashable, Sendable {
-    case heart  = "❤️"
-    case tongue = "👅"
-    case joy    = "😂"
-
-    static let pickerOrder: [CommentEmoji] = [.heart, .tongue, .joy]
-    static var pickerSet: Set<String> { Set(allCases.map(\.rawValue)) }
-}
-
-// MARK: - Realtime update
-
-enum CommentReactionUpdate: Sendable {
-    case added(CommentReaction)
-    case removed(reactionID: UUID, commentID: UUID)
 }
 
 // MARK: - Pagination cursor

@@ -4,7 +4,7 @@
 //
 //  One @Observable ViewModel per screen (Apollo convention). Owns the full
 //  comments lifecycle: loading, optimistic submit/delete, reply state,
-//  comment reactions, pagination, and realtime new-comment injection.
+//  pagination, and realtime new-comment injection.
 //
 
 import Foundation
@@ -39,11 +39,6 @@ final class CommentsViewModel {
     var replyTo: Comment?
     var transientErrorMessage: String?
     var deleteCandidate: Comment?
-
-    /// commentID → actively showing picker
-    var activeReactionPicker: UUID?
-    /// commentID → pending custom emoji picker
-    var customEmojiTarget: UUID?
 
     private var realtimeTask: Task<Void, Never>?
 
@@ -258,79 +253,6 @@ final class CommentsViewModel {
                     self.transientErrorMessage = "Couldn't delete. Try again."
                 }
             }
-        }
-    }
-
-    // MARK: - Comment Reactions
-
-    func openReactionPicker(for commentID: UUID) {
-        activeReactionPicker = commentID
-    }
-
-    func dismissReactionPicker() {
-        activeReactionPicker = nil
-    }
-
-    func requestCustomEmoji(for commentID: UUID) {
-        activeReactionPicker = nil
-        customEmojiTarget = commentID
-    }
-
-    func dismissCustomEmoji() {
-        customEmojiTarget = nil
-    }
-
-    func currentUserCommentReaction(in comment: Comment) -> String? {
-        comment.reactions.first(where: { $0.userID == repository.currentUserID })?.emoji
-    }
-
-    func toggleCommentReaction(comment: Comment, emoji: String) {
-        let commentID = comment.id
-        let previous  = currentUserCommentReaction(in: comment)
-        let isSame    = (previous == emoji)
-        let newEmoji: String? = isSame ? nil : emoji
-
-        applyReactionOptimistically(commentID: commentID, newEmoji: newEmoji)
-        activeReactionPicker = nil
-
-        Analytics.track(.commentReactionAdded, [
-            "emoji": emoji,
-            "comment_id": commentID.uuidString,
-            "post_id": postID.uuidString
-        ])
-
-        Task { [weak self] in
-            guard let self else { return }
-            do {
-                if let newEmoji {
-                    _ = try await repository.addCommentReaction(commentID: commentID, emoji: newEmoji)
-                } else {
-                    try await repository.removeCommentReaction(commentID: commentID)
-                }
-            } catch {
-                await MainActor.run {
-                    self.applyReactionOptimistically(commentID: commentID, newEmoji: previous)
-                    self.transientErrorMessage = "Couldn't react. Try again."
-                }
-            }
-        }
-    }
-
-    private func applyReactionOptimistically(commentID: UUID, newEmoji: String?) {
-        guard let idx = comments.firstIndex(where: { $0.id == commentID }) else { return }
-        comments[idx].reactions.removeAll { $0.userID == repository.currentUserID }
-        if let newEmoji {
-            comments[idx].reactions.append(
-                CommentReaction(
-                    id: UUID(),
-                    commentID: commentID,
-                    userID: repository.currentUserID,
-                    username: repository.currentUser.username,
-                    avatarURL: repository.currentUser.avatarURL,
-                    emoji: newEmoji,
-                    createdAt: Date()
-                )
-            )
         }
     }
 

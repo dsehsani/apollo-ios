@@ -304,13 +304,8 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
                     "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1080"
                 ]),
                 winsCount: 4,
-                reactions: [
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[1].id, username: friends[1].username, avatarURL: friends[1].avatarURL, emoji: "🔥", createdAt: at(6, 32)),
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[2].id, username: friends[2].username, avatarURL: friends[2].avatarURL, emoji: "❤️", createdAt: at(6, 35)),
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[3].id, username: friends[3].username, avatarURL: friends[3].avatarURL, emoji: "👑", createdAt: at(6, 40)),
-                    Reaction(id: UUID(), postID: UUID(), userID: friends[4].id, username: friends[4].username, avatarURL: friends[4].avatarURL, emoji: "🦾", createdAt: at(6, 45)),
-                ],
-                commentCount: 5,
+                reactions: [],
+                commentCount: 0,
                 currentUserReaction: nil
             ),
             Post(

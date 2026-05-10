@@ -3,8 +3,6 @@
 //  Apollo
 //
 //  Renders a single comment (or reply) per PRD §4B. Variable height; min 52pt.
-//  Hosts the CommentReactionPicker overlay and forwards all actions up to
-//  CommentsViewModel via closures so navigation stays in the sheet.
 //
 
 import SwiftUI
@@ -13,14 +11,9 @@ import Kingfisher
 struct CommentRow: View {
     var comment: Comment
     var isOwn: Bool
-    var currentReaction: String?
-    var isPickerActive: Bool
     var onReply: () -> Void
     var onDelete: () -> Void
     var onReport: () -> Void
-    var onReactionPickerTap: () -> Void
-    var onReactionSelect: (String) -> Void
-    var onReactionPlusTap: () -> Void
 
     private let indent: CGFloat = 28
 
@@ -36,9 +29,7 @@ struct CommentRow: View {
                     footerRow
                 }
 
-                Spacer(minLength: 4)
-
-                reactionButton
+                Spacer(minLength: 0)
             }
             .padding(.vertical, 10)
             .padding(.horizontal, 12)
@@ -100,52 +91,19 @@ struct CommentRow: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    // MARK: - Footer row (Reply + reactions line)
+    // MARK: - Footer row (Reply)
 
     private var footerRow: some View {
-        HStack(spacing: 6) {
-            Button(action: onReply) {
-                Text("Reply")
-                    .font(.sfPro(8))
-                    .foregroundStyle(Color(red: 0x1e/255, green: 0x1e/255, blue: 0x1e/255))
-            }
-            .buttonStyle(.plain)
-            .frame(minWidth: 44, minHeight: 44)
-            .contentShape(Rectangle())
-            .accessibilityLabel("Reply to \(comment.user.username)")
-
-            if !comment.reactions.isEmpty {
-                CommentReactionsLine(reactions: comment.reactions)
-            }
+        Button(action: onReply) {
+            Text("Reply")
+                .font(.sfPro(8))
+                .foregroundStyle(Color(red: 0x1e/255, green: 0x1e/255, blue: 0x1e/255))
         }
+        .buttonStyle(.plain)
+        .frame(minWidth: 44, minHeight: 44, alignment: .leading)
+        .contentShape(Rectangle())
         .padding(.leading, indent)
-    }
-
-    // MARK: - Smiley reaction button + picker
-
-    private var reactionButton: some View {
-        ZStack(alignment: .bottomTrailing) {
-            Button(action: onReactionPickerTap) {
-                Image(systemName: "face.smiling")
-                    .font(.system(size: 11, weight: .regular))
-                    .foregroundStyle(Color(red: 0x33/255, green: 0x33/255, blue: 0x33/255))
-                    .frame(width: 18, height: 18)
-                    .background(Circle().fill(Color(red: 0x11/255, green: 0x11/255, blue: 0x11/255)))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("React to comment")
-
-            if isPickerActive {
-                CommentReactionPicker(
-                    currentReaction: currentReaction,
-                    onSelect: onReactionSelect,
-                    onPlusTap: onReactionPlusTap
-                )
-                .offset(y: -26)
-                .animation(.easeOut(duration: 0.2), value: isPickerActive)
-            }
-        }
-        .padding(.top, 10)
+        .accessibilityLabel("Reply to \(comment.user.username)")
     }
 
     // MARK: - Relative time
@@ -156,29 +114,6 @@ struct CommentRow: View {
         if diff < 3600  { return "\(diff / 60)m" }
         if diff < 86400 { return "\(diff / 3600)h" }
         return "\(diff / 86400)d"
-    }
-}
-
-// MARK: - Inline emoji strip
-
-struct CommentReactionsLine: View {
-    var reactions: [CommentReaction]
-
-    /// Deduplicated emoji list in order of first appearance.
-    private var dedupedEmojis: [String] {
-        var seen = Set<String>()
-        return reactions.compactMap { r in
-            seen.insert(r.emoji).inserted ? r.emoji : nil
-        }
-    }
-
-    var body: some View {
-        HStack(spacing: 3) {
-            ForEach(dedupedEmojis, id: \.self) { emoji in
-                Text(emoji)
-                    .font(.system(size: 12))
-            }
-        }
     }
 }
 
@@ -197,22 +132,15 @@ struct CommentReactionsLine: View {
         text: "This is the type of W that compounds. Keep stacking.",
         createdAt: Date().addingTimeInterval(-45 * 60),
         parentID: nil,
-        reactions: [
-            CommentReaction(id: UUID(), commentID: UUID(), userID: UUID(), username: "mira", avatarURL: nil, emoji: "❤️", createdAt: .now),
-        ],
+        reactions: [],
         replyCount: 2
     )
     return CommentRow(
         comment: comment,
         isOwn: false,
-        currentReaction: nil,
-        isPickerActive: false,
         onReply: {},
         onDelete: {},
-        onReport: {},
-        onReactionPickerTap: {},
-        onReactionSelect: { _ in },
-        onReactionPlusTap: {}
+        onReport: {}
     )
     .background(Color.apolloBackground)
     .preferredColorScheme(.dark)

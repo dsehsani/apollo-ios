@@ -25,6 +25,7 @@ struct RootTabView: View {
         case feed, friends, camera, north, profile
     }
 
+    @EnvironmentObject private var sessionStore: SessionStore
     @State private var selection: TabSelection = .feed
     @State private var showCamera: Bool = false
 
@@ -43,7 +44,7 @@ struct RootTabView: View {
 
     var body: some View {
         TabView(selection: selectionBinding) {
-            FeedView()
+            FeedView(currentUser: sessionStore.currentUser)
                 .tag(TabSelection.feed)
                 .tabItem { Label("Feed", systemImage: "house") }
 

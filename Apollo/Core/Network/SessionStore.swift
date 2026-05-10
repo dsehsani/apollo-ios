@@ -30,6 +30,7 @@ import Supabase
 final class SessionStore: ObservableObject {
     @Published private(set) var session: Session?
     @Published private(set) var isBootstrapping: Bool = true
+    @Published private(set) var currentUser: CurrentUser?
 
     private var listenerTask: Task<Void, Never>?
 
@@ -48,6 +49,7 @@ final class SessionStore: ObservableObject {
         // returns nil — perfectly fine, we'll fall through to onboarding.
         if let existing = try? await supabase.auth.session {
             self.session = existing
+            await loadCurrentUser(for: existing.user.id)
         }
         self.isBootstrapping = false
 
@@ -55,11 +57,37 @@ final class SessionStore: ObservableObject {
             switch event {
             case .signedIn, .tokenRefreshed, .userUpdated, .initialSession:
                 self.session = session
+                if let userID = session?.user.id {
+                    await loadCurrentUser(for: userID)
+                } else {
+                    self.currentUser = nil
+                }
             case .signedOut, .userDeleted:
                 self.session = nil
+                self.currentUser = nil
             default:
                 self.session = session
             }
+        }
+    }
+
+    private func loadCurrentUser(for userID: UUID) async {
+        struct Row: Decodable { let id: UUID; let username: String; let avatar_url: String? }
+        do {
+            let row: Row = try await supabase
+                .from("users")
+                .select("id, username, avatar_url")
+                .eq("id", value: userID)
+                .single()
+                .execute()
+                .value
+            self.currentUser = CurrentUser(
+                id: row.id,
+                username: row.username,
+                avatarURL: row.avatar_url.flatMap(URL.init(string:))
+            )
+        } catch {
+            // Leave currentUser unchanged on transient failure; auth still works.
         }
     }
 }

@@ -3,14 +3,20 @@
 //  Apollo
 //
 //  Supabase-backed CommentsRepository. fetchComments queries the `comments` table
-//  joined to `users`. postComment inserts into `comments`. Reactions upsert into
-//  `comment_reactions`. newCommentsStream is stubbed until Realtime is wired up.
+//  joined to `users`. postComment inserts into `comments`. newCommentsStream is
+//  stubbed until Realtime is wired up.
 //
 
 import Foundation
 import Supabase
 
 // MARK: - Decodable row shapes
+
+/// Embedded `users(...)` from PostgREST is a nested object (not flattened).
+private struct CommentAuthorEmbed: Decodable {
+    let username: String
+    let avatar_url: String?
+}
 
 private struct CommentDBRow: Decodable {
     let id: UUID
@@ -19,18 +25,28 @@ private struct CommentDBRow: Decodable {
     let text: String
     let created_at: String
     let parent_id: UUID?
-    let username: String
-    let avatar_url: String?
-}
+    let users: CommentAuthorEmbed?
 
-private struct CommentReactionDBRow: Decodable {
-    let id: UUID
-    let comment_id: UUID
-    let user_id: UUID
-    let emoji: String
-    let created_at: String
-    let username: String
-    let avatar_url: String?
+    enum CodingKeys: String, CodingKey {
+        case id, post_id, user_id, text, created_at, parent_id, users
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        post_id = try c.decode(UUID.self, forKey: .post_id)
+        user_id = try c.decode(UUID.self, forKey: .user_id)
+        text = try c.decode(String.self, forKey: .text)
+        created_at = try c.decode(String.self, forKey: .created_at)
+        parent_id = try c.decodeIfPresent(UUID.self, forKey: .parent_id)
+        if let embed = try? c.decode(CommentAuthorEmbed.self, forKey: .users) {
+            users = embed
+        } else if let arr = try? c.decode([CommentAuthorEmbed].self, forKey: .users), let first = arr.first {
+            users = first
+        } else {
+            users = nil
+        }
+    }
 }
 
 // MARK: - Repository
@@ -121,40 +137,6 @@ final class SupabaseCommentsRepository: CommentsRepository, @unchecked Sendable 
             .execute()
     }
 
-    // MARK: - addCommentReaction
-
-    func addCommentReaction(commentID: UUID, emoji: String) async throws -> CommentReaction {
-        struct ReactionUpsert: Encodable {
-            let comment_id: UUID
-            let user_id: UUID
-            let emoji: String
-        }
-
-        let row = ReactionUpsert(comment_id: commentID, user_id: currentUserID, emoji: emoji)
-
-        let response = try await supabase
-            .from("comment_reactions")
-            .upsert(row, onConflict: "comment_id,user_id")
-            .select("id, comment_id, user_id, emoji, created_at, users(username, avatar_url)")
-            .single()
-            .execute()
-
-        let decoder = JSONDecoder()
-        let reactionRow = try decoder.decode(CommentReactionDBRow.self, from: response.data)
-        return mapReactionRow(reactionRow)
-    }
-
-    // MARK: - removeCommentReaction
-
-    func removeCommentReaction(commentID: UUID) async throws {
-        try await supabase
-            .from("comment_reactions")
-            .delete()
-            .eq("comment_id", value: commentID)
-            .eq("user_id", value: currentUserID)
-            .execute()
-    }
-
     // MARK: - newCommentsStream (stubbed until Realtime is wired)
 
     func newCommentsStream(postID: UUID) -> AsyncStream<Comment> {
@@ -166,32 +148,23 @@ final class SupabaseCommentsRepository: CommentsRepository, @unchecked Sendable 
     // MARK: - Row mappers
 
     private func mapRow(_ r: CommentDBRow) -> Comment {
-        Comment(
+        let author = r.users
+        let username = author?.username ?? "user"
+        let avatarURL = author?.avatar_url.flatMap(URL.init(string:))
+        return Comment(
             id: r.id,
             postID: r.post_id,
             userID: r.user_id,
             user: CommentUser(
                 id: r.user_id,
-                username: r.username,
-                avatarURL: r.avatar_url.flatMap(URL.init(string:))
+                username: username,
+                avatarURL: avatarURL
             ),
             text: r.text,
             createdAt: parseTimestamp(r.created_at) ?? Date(),
             parentID: r.parent_id,
             reactions: [],
             replyCount: 0
-        )
-    }
-
-    private func mapReactionRow(_ r: CommentReactionDBRow) -> CommentReaction {
-        CommentReaction(
-            id: r.id,
-            commentID: r.comment_id,
-            userID: r.user_id,
-            username: r.username,
-            avatarURL: r.avatar_url.flatMap(URL.init(string:)),
-            emoji: r.emoji,
-            createdAt: parseTimestamp(r.created_at) ?? Date()
         )
     }
 
