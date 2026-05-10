@@ -12,6 +12,8 @@ import Supabase
 import SwiftUI
 
 struct FeedView: View {
+    @EnvironmentObject private var notificationsService: NotificationsService
+    @ObservedObject private var deepLinkRouter = DeepLinkRouter.shared
     @State private var viewModel: FeedViewModel
     @State private var navigationPath = NavigationPath()
     @State private var sheetItem: FeedSheetItem?
@@ -114,21 +116,35 @@ struct FeedView: View {
                     Button {
                         navigationPath.append(FeedDestination.notifications)
                     } label: {
-                        Image("IconBell")
-                            .renderingMode(.template)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 22, height: 22)
-                            .foregroundStyle(Color.apolloPrimaryText)
+                        ZStack(alignment: .topTrailing) {
+                            Image("IconBell")
+                                .renderingMode(.template)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 22, height: 22)
+                                .foregroundStyle(Color.apolloPrimaryText)
+
+                            if notificationsService.unreadCount > 0 {
+                                Circle()
+                                    .fill(Color.white)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 3, y: -3)
+                            }
+                        }
                     }
-                    .accessibilityLabel("Notifications")
+                    .accessibilityLabel(
+                        notificationsService.unreadCount > 0
+                            ? "Notifications, \(notificationsService.unreadCount) unread"
+                            : "Notifications"
+                    )
                 }
             }
             .toolbarTitleDisplayMode(.inline)
             .navigationDestination(for: FeedDestination.self) { dest in
                 switch dest {
                 case .notifications:
-                    NotificationsPlaceholderView()
+                    NotificationsView(currentUser: currentUser)
+                        .environmentObject(notificationsService)
                 case .profile(let user):
                     ProfileView(userID: user.id, currentUser: currentUser)
                 case .shareStrip(let post):
@@ -211,6 +227,17 @@ struct FeedView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .apolloFeedShouldRefresh)) { _ in
                 Task { await viewModel.refresh() }
+            }
+            // Deep link: scroll/push to a specific post from a notification tap.
+            .onChange(of: deepLinkRouter.targetPostID) { _, postID in
+                guard let postID else { return }
+                deepLinkRouter.targetPostID = nil
+                if let post = viewModel.posts.first(where: { $0.id == postID }) {
+                    if deepLinkRouter.openComments {
+                        deepLinkRouter.openComments = false
+                        sheetItem = .comments(post)
+                    }
+                }
             }
         }
         .preferredColorScheme(.dark)

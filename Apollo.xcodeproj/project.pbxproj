@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		180CE49E913E5A6D049366E4 /* NotificationsRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D3736B1745155BD438F2EC6 /* NotificationsRepository.swift */; };
+		35AA66B009AB1DFA3EDC3BE5 /* NotificationsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B8B01C69734D8146FFB3D5 /* NotificationsViewModel.swift */; };
 		3DF05C3A2FAFA64E009E1BB2 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 3DF05C392FAFA64E009E1BB2 /* Auth */; };
 		3DF05C3C2FAFA64E009E1BB2 /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 3DF05C3B2FAFA64E009E1BB2 /* Functions */; };
 		3DF05C3E2FAFA64E009E1BB2 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 3DF05C3D2FAFA64E009E1BB2 /* PostgREST */; };
@@ -14,6 +16,16 @@
 		3DF05C422FAFA64E009E1BB2 /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 3DF05C412FAFA64E009E1BB2 /* Storage */; };
 		3DF05C462FAFA71D009E1BB2 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 3DF05C452FAFA71D009E1BB2 /* Kingfisher */; };
 		3DF05CAB2FAFA64E009E1BB2 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 3DF05CAA2FAFA64E009E1BB2 /* Supabase */; };
+		464164E946969723C3BB2639 /* SoftPermissionBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841AE71CAE6FAF8D12063DBE /* SoftPermissionBanner.swift */; };
+		4EDE8CAB706DDD1714A4E131 /* NotificationsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECF6DEDDA68E8EEFFD66871 /* NotificationsModels.swift */; };
+		50CDDD12E4F837BF80983A4D /* EnableNotificationsPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D047FC95B3DCC600D7B566D5 /* EnableNotificationsPromptView.swift */; };
+		60E2570F1E5D5A0AB98E2FFA /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E111CA1FE32AFBBA8A3592C2 /* DeepLinkRouter.swift */; };
+		7A1FFA918BEE588B691A5AB5 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271A964E37D8A89D00435C0B /* NotificationsView.swift */; };
+		889EEEDAB21FE515B41F9BD4 /* SupabaseNotificationsRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED28DC69152414CF4315D964 /* SupabaseNotificationsRepository.swift */; };
+		A0826478A2B5759165EF8AE3 /* NotificationRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA62F91DC449E8E68337D29B /* NotificationRow.swift */; };
+		D81E4E9CA72170F22CC4376A /* NotificationsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D222E1882508DD91F601278F /* NotificationsService.swift */; };
+		D9A1F708411723BE4D3CE3D3 /* PushTokenRegistrar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5C0B22AFF7898A843118A57 /* PushTokenRegistrar.swift */; };
+		F9CA80C7DE7C1A0ADD34FCD8 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9650B4EB271440B737DBAA71 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,9 +46,21 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		271A964E37D8A89D00435C0B /* NotificationsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
 		3DF05C0C2FAFA312009E1BB2 /* Apollo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Apollo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DF05C1B2FAFA313009E1BB2 /* ApolloTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ApolloTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DF05C252FAFA313009E1BB2 /* ApolloUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ApolloUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5D3736B1745155BD438F2EC6 /* NotificationsRepository.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsRepository.swift; sourceTree = "<group>"; };
+		5ECF6DEDDA68E8EEFFD66871 /* NotificationsModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsModels.swift; sourceTree = "<group>"; };
+		841AE71CAE6FAF8D12063DBE /* SoftPermissionBanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoftPermissionBanner.swift; sourceTree = "<group>"; };
+		9650B4EB271440B737DBAA71 /* AppDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		D047FC95B3DCC600D7B566D5 /* EnableNotificationsPromptView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EnableNotificationsPromptView.swift; sourceTree = "<group>"; };
+		D222E1882508DD91F601278F /* NotificationsService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsService.swift; sourceTree = "<group>"; };
+		D5B8B01C69734D8146FFB3D5 /* NotificationsViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsViewModel.swift; sourceTree = "<group>"; };
+		E111CA1FE32AFBBA8A3592C2 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
+		E5C0B22AFF7898A843118A57 /* PushTokenRegistrar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PushTokenRegistrar.swift; sourceTree = "<group>"; };
+		EA62F91DC449E8E68337D29B /* NotificationRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationRow.swift; sourceTree = "<group>"; };
+		ED28DC69152414CF4315D964 /* SupabaseNotificationsRepository.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SupabaseNotificationsRepository.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -102,6 +126,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		28670BEADF0D3E2CB912715B /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+				5D3736B1745155BD438F2EC6 /* NotificationsRepository.swift */,
+				ED28DC69152414CF4315D964 /* SupabaseNotificationsRepository.swift */,
+			);
+			path = Repositories;
+			sourceTree = "<group>";
+		};
+		3B16EC63380F8E7D3B9ECEA4 /* Apollo */ = {
+			isa = PBXGroup;
+			children = (
+				A4128F61413CE154DF3F2416 /* Core */,
+				A6D71F52BE8AAAC1D6EF28B9 /* Features */,
+			);
+			path = Apollo;
+			sourceTree = "<group>";
+		};
 		3DF05C032FAFA312009E1BB2 = {
 			isa = PBXGroup;
 			children = (
@@ -110,6 +152,7 @@
 				3DF05C282FAFA313009E1BB2 /* ApolloUITests */,
 				3DF05C442FAFA71D009E1BB2 /* Frameworks */,
 				3DF05C0D2FAFA312009E1BB2 /* Products */,
+				3B16EC63380F8E7D3B9ECEA4 /* Apollo */,
 			);
 			sourceTree = "<group>";
 		};
@@ -128,6 +171,63 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		78EE27A4D5D9B182C6D6A293 /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				271A964E37D8A89D00435C0B /* NotificationsView.swift */,
+				D5B8B01C69734D8146FFB3D5 /* NotificationsViewModel.swift */,
+				97B3D92E32BE053E83A35495 /* Views */,
+			);
+			path = Notifications;
+			sourceTree = "<group>";
+		};
+		97B3D92E32BE053E83A35495 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				EA62F91DC449E8E68337D29B /* NotificationRow.swift */,
+				D047FC95B3DCC600D7B566D5 /* EnableNotificationsPromptView.swift */,
+				841AE71CAE6FAF8D12063DBE /* SoftPermissionBanner.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A4128F61413CE154DF3F2416 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				B036BBB2447B5DEE5DCC2561 /* Notifications */,
+				E03D76AA8FF13E548BBD5F92 /* Models */,
+				28670BEADF0D3E2CB912715B /* Repositories */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		A6D71F52BE8AAAC1D6EF28B9 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				78EE27A4D5D9B182C6D6A293 /* Notifications */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		B036BBB2447B5DEE5DCC2561 /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				9650B4EB271440B737DBAA71 /* AppDelegate.swift */,
+				D222E1882508DD91F601278F /* NotificationsService.swift */,
+				E5C0B22AFF7898A843118A57 /* PushTokenRegistrar.swift */,
+				E111CA1FE32AFBBA8A3592C2 /* DeepLinkRouter.swift */,
+			);
+			path = Notifications;
+			sourceTree = "<group>";
+		};
+		E03D76AA8FF13E548BBD5F92 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				5ECF6DEDDA68E8EEFFD66871 /* NotificationsModels.swift */,
+			);
+			path = Models;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -281,6 +381,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F9CA80C7DE7C1A0ADD34FCD8 /* AppDelegate.swift in Sources */,
+				D81E4E9CA72170F22CC4376A /* NotificationsService.swift in Sources */,
+				D9A1F708411723BE4D3CE3D3 /* PushTokenRegistrar.swift in Sources */,
+				60E2570F1E5D5A0AB98E2FFA /* DeepLinkRouter.swift in Sources */,
+				4EDE8CAB706DDD1714A4E131 /* NotificationsModels.swift in Sources */,
+				180CE49E913E5A6D049366E4 /* NotificationsRepository.swift in Sources */,
+				889EEEDAB21FE515B41F9BD4 /* SupabaseNotificationsRepository.swift in Sources */,
+				7A1FFA918BEE588B691A5AB5 /* NotificationsView.swift in Sources */,
+				35AA66B009AB1DFA3EDC3BE5 /* NotificationsViewModel.swift in Sources */,
+				A0826478A2B5759165EF8AE3 /* NotificationRow.swift in Sources */,
+				50CDDD12E4F837BF80983A4D /* EnableNotificationsPromptView.swift in Sources */,
+				464164E946969723C3BB2639 /* SoftPermissionBanner.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

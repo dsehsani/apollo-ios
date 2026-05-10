@@ -27,8 +27,11 @@ struct RootTabView: View {
     }
 
     @EnvironmentObject private var sessionStore: SessionStore
+    @EnvironmentObject private var notificationsService: NotificationsService
+    @ObservedObject private var deepLinkRouter = DeepLinkRouter.shared
     @State private var selection: TabSelection = .feed
     @State private var showCamera: Bool = false
+    @State private var showPushPrompt: Bool = false
 
     private var selectionBinding: Binding<TabSelection> {
         Binding(
@@ -85,6 +88,32 @@ struct RootTabView: View {
                 "avatarURL": sessionStore.currentUser?.avatarURL?.absoluteString ?? "<nil>",
             ])
             // #endregion
+        }
+        // Deep link routing from push taps.
+        .onChange(of: deepLinkRouter.targetTab) { _, newTab in
+            guard let newTab else { return }
+            switch newTab {
+            case .feed:     selection = .feed
+            case .friends:  selection = .friends
+            case .north:    selection = .north
+            case .profile:  selection = .profile
+            }
+            deepLinkRouter.targetTab = nil
+        }
+        // Post-first-win push permission prompt.
+        .onChange(of: notificationsService.shouldShowPermissionPrompt) { _, show in
+            if show { showPushPrompt = true }
+        }
+        .sheet(isPresented: $showPushPrompt, onDismiss: {
+            notificationsService.shouldShowPermissionPrompt = false
+        }) {
+            EnableNotificationsPromptView {
+                showPushPrompt = false
+                notificationsService.shouldShowPermissionPrompt = false
+            }
+            .environmentObject(notificationsService)
+            .presentationDetents([.fraction(0.55)])
+            .presentationDragIndicator(.hidden)
         }
         .fullScreenCover(isPresented: $showCamera) {
             let userID = sessionStore.currentUser?.id ?? supabase.auth.currentUser?.id ?? UUID()

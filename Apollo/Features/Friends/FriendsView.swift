@@ -12,6 +12,7 @@ import Supabase
 import Auth
 
 struct FriendsView: View {
+    @EnvironmentObject private var notificationsService: NotificationsService
     @State private var viewModel: FriendsViewModel
     @State private var selectedTab: FriendsTab = .friends
 
@@ -61,6 +62,11 @@ struct FriendsView: View {
 
         return ScrollView {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: []) {
+
+                // Soft push-permission banner when user has denied notifications (PRD §5).
+                if notificationsService.authorizationStatus == .denied {
+                    SoftPermissionBanner()
+                }
 
                 FriendsHeroBar(onQRTap: {})
 

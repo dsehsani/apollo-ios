@@ -32,9 +32,12 @@ struct ProfileView: View {
     @State private var showAvatarPicker = false
     @State private var showBannerCameraRollPicker = false
     @State private var showBannerWinsPicker = false
+    @State private var showMemories = false
     @State private var avatarPickerItem: PhotosPickerItem?
     @State private var bannerPickerItem: PhotosPickerItem?
     @State private var photoViewerItem: ProfilePhotoViewerItem?
+
+    private let signedInID: UUID
 
     // MARK: Init
 
@@ -43,12 +46,13 @@ struct ProfileView: View {
     ///   - currentUser: The currently signed-in user — used to determine `isCurrentUser`
     ///     and to build the repository. Falls back to `supabase.auth.currentUser`.
     init(userID: UUID? = nil, currentUser: CurrentUser? = nil) {
-        let signedInID = currentUser?.id ?? supabase.auth.currentUser?.id ?? UUID()
-        let targetID   = userID ?? signedInID
+        let resolvedSignedInID = currentUser?.id ?? supabase.auth.currentUser?.id ?? UUID()
+        let targetID           = userID ?? resolvedSignedInID
         let repo = SupabaseProfileRepository(
-            currentUserID: signedInID,
+            currentUserID: resolvedSignedInID,
             profileUserID: targetID
         )
+        signedInID = resolvedSignedInID
         _viewModel = State(initialValue: ProfileViewModel(userID: targetID, repository: repo))
     }
 
@@ -79,6 +83,12 @@ struct ProfileView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(isPresented: $showMemories) {
+                MemoriesView(
+                    userID: signedInID,
+                    repository: SupabaseMemoriesRepository(userID: signedInID)
+                )
+            }
         }
         .task { await viewModel.load() }
         .onReceive(NotificationCenter.default.publisher(for: .apolloProfileShouldRefresh)) { _ in
@@ -192,7 +202,7 @@ struct ProfileView: View {
             Spacer()
 
             HStack(spacing: 24) {
-                circleIconButton(systemName: "calendar", action: {})
+                circleIconButton(systemName: "calendar", action: { showMemories = true })
                 if isCurrentUser {
                     circleIconButton(systemName: "bell", action: {})
                 } else {
