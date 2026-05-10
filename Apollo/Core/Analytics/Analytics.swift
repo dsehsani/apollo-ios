@@ -14,6 +14,12 @@ enum AnalyticsEvent: String {
     case breakdownOpened     = "breakdown_opened"
     case breakdownFiltered   = "breakdown_filtered"
     case customEmojiUsed     = "custom_emoji_used"
+    // Comments (PRD §09 §11)
+    case commentsOpened      = "comments_opened"
+    case commentSubmitted    = "comment_submitted"
+    case commentDeleted      = "comment_deleted"
+    case replyStarted        = "reply_started"
+    case commentReactionAdded = "comment_reaction_added"
 }
 
 enum Analytics {

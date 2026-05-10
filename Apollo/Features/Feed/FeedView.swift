@@ -20,11 +20,17 @@ struct FeedView: View {
     @State private var isActionSheetPresented = false
     @State private var deleteCandidate: Post?
 
-    init(repository: FeedRepository? = nil) {
-        let repo: FeedRepository = repository ?? SupabaseFeedRepository(
-            currentUserID: supabase.auth.currentUser?.id ?? UUID()
-        )
-        _viewModel = State(initialValue: FeedViewModel(repository: repo))
+    init(repository: FeedRepository? = nil, commentsRepository: CommentsRepository? = nil) {
+        let userID = supabase.auth.currentUser?.id ?? UUID()
+        let feedRepo: FeedRepository = repository ?? SupabaseFeedRepository(currentUserID: userID)
+        // Default to the in-memory mock until the Supabase `comments` and
+        // `comment_reactions` tables are provisioned. Same temporary pattern
+        // used for several FeedRepository methods today.
+        let commentsRepo: CommentsRepository = commentsRepository ?? MockCommentsRepository()
+        _viewModel = State(initialValue: FeedViewModel(
+            repository: feedRepo,
+            commentsRepository: commentsRepo
+        ))
     }
 
     init(viewModel: FeedViewModel) {
@@ -123,7 +129,7 @@ struct FeedView: View {
             .sheet(item: $sheetItem) { item in
                 switch item {
                 case .comments(let post):
-                    CommentsSheetPlaceholder(post: post)
+                    CommentsSheet(post: post, repository: viewModel.commentsRepository)
                 case .reactions(let post):
                     ReactionsBreakdownSheet(post: post, repository: viewModel.repository)
                 case .report(let post):
@@ -345,21 +351,36 @@ enum FeedFullScreenItem: Identifiable {
 // MARK: - Previews
 
 #Preview("Loaded") {
-    FeedView(repository: MockFeedRepository(forceState: .loaded))
+    FeedView(
+        repository: MockFeedRepository(forceState: .loaded),
+        commentsRepository: MockCommentsRepository(forceState: .populated)
+    )
 }
 
 #Preview("Empty") {
-    FeedView(repository: MockFeedRepository(forceState: .empty))
+    FeedView(
+        repository: MockFeedRepository(forceState: .empty),
+        commentsRepository: MockCommentsRepository(forceState: .empty)
+    )
 }
 
 #Preview("Partial") {
-    FeedView(repository: MockFeedRepository(forceState: .partial))
+    FeedView(
+        repository: MockFeedRepository(forceState: .partial),
+        commentsRepository: MockCommentsRepository(forceState: .populated)
+    )
 }
 
 #Preview("Yesterday Empty") {
-    FeedView(repository: MockFeedRepository(forceState: .yesterdayEmpty))
+    FeedView(
+        repository: MockFeedRepository(forceState: .yesterdayEmpty),
+        commentsRepository: MockCommentsRepository(forceState: .empty)
+    )
 }
 
 #Preview("Error") {
-    FeedView(repository: MockFeedRepository(forceState: .error))
+    FeedView(
+        repository: MockFeedRepository(forceState: .error),
+        commentsRepository: MockCommentsRepository(forceState: .error)
+    )
 }

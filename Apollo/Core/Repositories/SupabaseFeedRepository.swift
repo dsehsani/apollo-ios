@@ -37,29 +37,6 @@ final class SupabaseFeedRepository: FeedRepository, @unchecked Sendable {
     // MARK: - fetchFeed
 
     func fetchFeed(tab: FeedTab, cursor: FeedCursor?, limit: Int) async throws -> FeedPage {
-        // #region agent log
-        let dbLog: (String, [String: Any]) -> Void = { message, data in
-            let ts = Date().timeIntervalSince1970
-            var payload: [String: Any] = [
-                "sessionId": "3d8d77", "runId": "run1",
-                "location": "SupabaseFeedRepository.swift:fetchFeed",
-                "message": message, "timestamp": Int64(ts * 1000)
-            ]
-            payload.merge(data) { _, new in new }
-            if let json = try? JSONSerialization.data(withJSONObject: payload, options: .sortedKeys),
-               let line = String(data: json, encoding: .utf8) {
-                print("[APOLLO_DEBUG] \(line)")
-                let logPath = "/Volumes/Darius_SSD/Apollo/Apollo/.cursor/debug-3d8d77.log"
-                let entry = line + "\n"
-                if let fh = FileHandle(forWritingAtPath: logPath) {
-                    fh.seekToEndOfFile(); fh.write(entry.data(using: .utf8)!); try? fh.close()
-                } else {
-                    try? entry.write(toFile: logPath, atomically: false, encoding: .utf8)
-                }
-            }
-        }
-        // #endregion
-
         do {
             // post_date is a Postgres `date` column stored in UTC. Compute today/yesterday
             // using the UTC calendar so the filter strings are plain YYYY-MM-DD date values.
@@ -81,20 +58,9 @@ final class SupabaseFeedRepository: FeedRepository, @unchecked Sendable {
             let startStr = dateFmt.string(from: dayStart)
             let endStr   = dateFmt.string(from: dayEnd)
 
-            // ISO-8601 formatter kept for created_at (Postgres `timestamptz`) in cursor pagination.
+            // ISO-8601 formatter for created_at (Postgres `timestamptz`) in cursor pagination.
             let iso = ISO8601DateFormatter()
             iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-
-            // #region agent log
-            dbLog("entry", [
-                "tab": tab.rawValue,
-                "hasCursor": cursor != nil,
-                "limit": limit,
-                "currentUserID": currentUserID.uuidString,
-                "startStr": startStr,
-                "endStr": endStr
-            ])
-            // #endregion
 
             var query = supabase
                 .from("feed_posts")
@@ -112,43 +78,17 @@ final class SupabaseFeedRepository: FeedRepository, @unchecked Sendable {
                 )
             }
 
-            // #region agent log
-            dbLog("before_execute", [:])
-            // #endregion
-
             // Fetch limit+1 to detect whether more pages exist.
-            // Split execute() from decode so we can log the raw body on failure.
             let response = try await query
                 .order("created_at", ascending: false)
                 .order("id", ascending: false)
                 .limit(limit + 1)
                 .execute()
 
-            // #region agent log
-            let bodySnippet = String(data: response.data.prefix(2048), encoding: .utf8) ?? "<binary>"
-            dbLog("raw_response", ["statusCode": response.response.statusCode, "body": bodySnippet])
-            // #endregion
-
-            // Decode separately so a decode failure is caught and logged with the offending payload.
+            // Decode separately so a decode failure surfaces the offending payload type.
             // Date fields are kept as String in FeedPostRow to avoid ISO8601 format mismatches.
             let decoder = JSONDecoder()
-            let rows: [FeedPostRow]
-            do {
-                rows = try decoder.decode([FeedPostRow].self, from: response.data)
-            } catch {
-                // #region agent log
-                dbLog("decode_error", [
-                    "errorType": String(describing: type(of: error)),
-                    "description": error.localizedDescription,
-                    "detail": String(describing: error)
-                ])
-                // #endregion
-                throw error
-            }
-
-            // #region agent log
-            dbLog("success", ["rowCount": rows.count])
-            // #endregion
+            let rows = try decoder.decode([FeedPostRow].self, from: response.data)
 
             let hasMore = rows.count > limit
             let pageRows = Array(rows.prefix(limit))
@@ -173,13 +113,6 @@ final class SupabaseFeedRepository: FeedRepository, @unchecked Sendable {
         } catch let error as FeedRepositoryError {
             throw error
         } catch {
-            // #region agent log
-            dbLog("outer_catch", [
-                "errorType": String(describing: type(of: error)),
-                "description": error.localizedDescription,
-                "detail": String(describing: error)
-            ])
-            // #endregion
             throw FeedRepositoryError.network
         }
     }
@@ -216,7 +149,6 @@ final class SupabaseFeedRepository: FeedRepository, @unchecked Sendable {
     // The ISO8601DateFormatter handles T-separated forms; the DateFormatter fallback
     // handles the space-separated Postgres default.
     private func parseTimestamp(_ raw: String) -> Date? {
-        // Normalise: replace leading space separator with T
         let normalised = raw.replacingOccurrences(of: " ", with: "T")
 
         let isoFull = ISO8601DateFormatter()
@@ -244,109 +176,21 @@ final class SupabaseFeedRepository: FeedRepository, @unchecked Sendable {
             let emoji: String
         }
 
-        // #region agent log
-        let dbLog: (String, [String: Any]) -> Void = { message, data in
-            let ts = Date().timeIntervalSince1970
-            var payload: [String: Any] = [
-                "sessionId": "3d8d77", "runId": "run1",
-                "location": "SupabaseFeedRepository.swift:addReaction",
-                "message": message, "timestamp": Int64(ts * 1000)
-            ]
-            payload.merge(data) { _, new in new }
-            if let json = try? JSONSerialization.data(withJSONObject: payload, options: .sortedKeys),
-               let line = String(data: json, encoding: .utf8) {
-                print("[APOLLO_DEBUG] \(line)")
-                let logPath = "/Volumes/Darius_SSD/Apollo/Apollo/.cursor/debug-3d8d77.log"
-                let entry = line + "\n"
-                if let fh = FileHandle(forWritingAtPath: logPath) {
-                    fh.seekToEndOfFile(); fh.write(entry.data(using: .utf8)!); try? fh.close()
-                } else {
-                    try? entry.write(toFile: logPath, atomically: false, encoding: .utf8)
-                }
-            }
-        }
-        dbLog("entry", ["postID": postID.uuidString, "userID": currentUserID.uuidString, "emoji": emoji])
-        // #endregion
-
         let row = ReactionUpsert(post_id: postID, user_id: currentUserID, emoji: emoji)
-        do {
-            // #region agent log
-            dbLog("before_execute", [:])
-            // #endregion
-
-            let response = try await supabase
-                .from("reactions")
-                .upsert(row, onConflict: "post_id,user_id")
-                .execute()
-
-            // #region agent log
-            let body = String(data: response.data.prefix(2048), encoding: .utf8) ?? "<binary>"
-            dbLog("raw_response", ["statusCode": response.response.statusCode, "body": body])
-            // #endregion
-        } catch {
-            // #region agent log
-            dbLog("reaction_error", [
-                "errorType": String(describing: type(of: error)),
-                "description": error.localizedDescription,
-                "detail": String(describing: error)
-            ])
-            // #endregion
-            throw error
-        }
+        try await supabase
+            .from("reactions")
+            .upsert(row, onConflict: "post_id,user_id")
+            .execute()
     }
 
     // DELETE /reactions — filtered by both post_id and user_id so users can only remove their own
     func removeReaction(postID: UUID) async throws {
-        // #region agent log
-        let dbLog: (String, [String: Any]) -> Void = { message, data in
-            let ts = Date().timeIntervalSince1970
-            var payload: [String: Any] = [
-                "sessionId": "3d8d77", "runId": "run1",
-                "location": "SupabaseFeedRepository.swift:removeReaction",
-                "message": message, "timestamp": Int64(ts * 1000)
-            ]
-            payload.merge(data) { _, new in new }
-            if let json = try? JSONSerialization.data(withJSONObject: payload, options: .sortedKeys),
-               let line = String(data: json, encoding: .utf8) {
-                print("[APOLLO_DEBUG] \(line)")
-                let logPath = "/Volumes/Darius_SSD/Apollo/Apollo/.cursor/debug-3d8d77.log"
-                let entry = line + "\n"
-                if let fh = FileHandle(forWritingAtPath: logPath) {
-                    fh.seekToEndOfFile(); fh.write(entry.data(using: .utf8)!); try? fh.close()
-                } else {
-                    try? entry.write(toFile: logPath, atomically: false, encoding: .utf8)
-                }
-            }
-        }
-        dbLog("entry", ["postID": postID.uuidString, "userID": currentUserID.uuidString])
-        // #endregion
-
-        do {
-            // #region agent log
-            dbLog("before_execute", [:])
-            // #endregion
-
-            let response = try await supabase
-                .from("reactions")
-                .delete()
-                .eq("post_id", value: postID)
-                .eq("user_id", value: currentUserID)
-                .execute()
-
-            // #region agent log
-            let body = String(data: response.data.prefix(2048), encoding: .utf8) ?? "<binary>"
-            dbLog("raw_response", ["statusCode": response.response.statusCode, "body": body])
-            // #endregion
-        } catch {
-            // #region agent log
-            dbLog("reaction_error", [
-                "errorType": String(describing: type(of: error)),
-                "description": error.localizedDescription,
-                "detail": String(describing: error)
-            ])
-            // #endregion
-            throw error
-        }
+        try await supabase
+            .from("reactions")
+            .delete()
+            .eq("post_id", value: postID)
+            .eq("user_id", value: currentUserID)
+            .execute()
     }
 
     // GET /posts/:post_id/reactions

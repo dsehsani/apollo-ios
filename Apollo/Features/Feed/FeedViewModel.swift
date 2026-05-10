@@ -26,6 +26,7 @@ final class FeedViewModel {
     private static let prefetchTrigger = 3
 
     let repository: FeedRepository
+    let commentsRepository: CommentsRepository
 
     var tab: FeedTab = .now
     var phase: Phase = .loading
@@ -50,8 +51,9 @@ final class FeedViewModel {
     var currentUserID: UUID { repository.currentUserID }
     var pendingNewPostsCount: Int { pendingNewPosts.count }
 
-    init(repository: FeedRepository) {
-        self.repository = repository
+    init(repository: FeedRepository, commentsRepository: CommentsRepository) {
+        self.repository         = repository
+        self.commentsRepository = commentsRepository
     }
 
     // MARK: - Lifecycle
@@ -333,6 +335,13 @@ final class FeedViewModel {
 
     func isOwnPost(_ post: Post) -> Bool {
         post.user.id == currentUserID
+    }
+
+    /// Increments the local comment count on a post when the user submits a top-level
+    /// comment, so the badge in PostCard updates without a full feed refetch.
+    func incrementCommentCount(postID: UUID) {
+        guard let idx = posts.firstIndex(where: { $0.id == postID }) else { return }
+        posts[idx].commentCount += 1
     }
 
     private func derivePhase(from page: FeedPage) -> Phase {
