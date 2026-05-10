@@ -1,0 +1,3 @@
+{"timestamp":1778431135571,"data":{"avatarURL":"<nil>","hasAvatarURL":false},"hypothesisId":"H1","sessionId":"b2d358","location":"RootTabView.onAppear","message":"TabView appeared"}
+{"sessionId":"b2d358","message":"TabView appeared","hypothesisId":"H1","timestamp":1778432520636,"data":{"avatarURL":"<nil>","hasAvatarURL":false},"location":"RootTabView.onAppear"}
+{"location":"RootTabView.onAppear","data":{"hasAvatarURL":false,"avatarURL":"<nil>"},"timestamp":1778432729275,"sessionId":"b2d358","hypothesisId":"H1","message":"TabView appeared"}

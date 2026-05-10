@@ -10,4 +10,7 @@ import Foundation
 extension Notification.Name {
     static let apolloFeedShouldRefresh    = Notification.Name("apolloFeedShouldRefresh")
     static let apolloProfileShouldRefresh = Notification.Name("apolloProfileShouldRefresh")
+    /// Posted by CameraViewModel after a successful post commit.
+    /// userInfo: ["totalWins": Int]
+    static let apolloPostCommitted        = Notification.Name("apolloPostCommitted")
 }

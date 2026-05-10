@@ -67,6 +67,7 @@ struct FriendRequestRow: View {
     FriendRequestRow(
         request: FriendRequest(
             id: UUID(),
+            requesterUserID: UUID(),
             displayName: "Jayden Betts",
             handle: "angryjayden",
             avatarURL: nil,

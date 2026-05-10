@@ -8,7 +8,6 @@
 
 import Foundation
 import SwiftUI
-import UserNotifications
 
 @Observable
 final class WinDetailsViewModel: Identifiable {
@@ -129,9 +128,9 @@ final class WinDetailsViewModel: Identifiable {
             }
 
             if remindMe {
-                scheduleNotification(for: saved)
+                await scheduleWinReminder(for: saved)
             } else if mode == .edit, let win = originalWin {
-                cancelNotification(for: win.id)
+                NotificationsService.shared.cancelWinReminder(winID: win.id)
             }
 
             isSaving = false
@@ -169,7 +168,7 @@ final class WinDetailsViewModel: Identifiable {
         isDeleting = true
         do {
             try await repository.deleteWin(win.id)
-            cancelNotification(for: win.id)
+            NotificationsService.shared.cancelWinReminder(winID: win.id)
             isDeleting = false
             onDelete?()
             onDismiss?()
@@ -194,43 +193,27 @@ final class WinDetailsViewModel: Identifiable {
         }
     }
 
-    // MARK: - Local notifications
+    // MARK: - Local notifications (delegated to NotificationsService)
 
-    private func scheduleNotification(for win: WinListItem) {
-        let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
-            guard granted else { return }
-
-            let content = UNMutableNotificationContent()
-            content.title = "Time for your win"
-            content.body = win.name
-            content.sound = .default
-
-            let components = Calendar.current.dateComponents([.hour, .minute], from: self.reminderTime)
-            let trigger: UNNotificationTrigger
-
-            switch win.repeatSchedule {
-            case .daily:
-                trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
-            case .weekly:
-                var weeklyComponents = components
-                weeklyComponents.weekday = Calendar.current.component(.weekday, from: Date())
-                trigger = UNCalendarNotificationTrigger(dateMatching: weeklyComponents, repeats: true)
-            case .once, .custom:
-                trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-            }
-
-            let request = UNNotificationRequest(
-                identifier: "win-\(win.id.uuidString)",
-                content: content,
-                trigger: trigger
-            )
-            center.add(request, withCompletionHandler: nil)
+    @MainActor
+    private func scheduleWinReminder(for win: WinListItem) async {
+        let repeatMode: WinReminderRepeat
+        switch win.repeatSchedule {
+        case .daily:            repeatMode = .daily
+        case .weekly:           repeatMode = .weekly
+        case .once, .custom:    repeatMode = .once
         }
+
+        let service = NotificationsService.shared
+        if service.authorizationStatus == .notDetermined {
+            _ = await service.requestAuthorization(context: .settings)
+        }
+        service.scheduleWinReminder(
+            winID: win.id,
+            name: win.name,
+            time: reminderTime,
+            repeat: repeatMode
+        )
     }
 
-    private func cancelNotification(for winID: UUID) {
-        UNUserNotificationCenter.current()
-            .removePendingNotificationRequests(withIdentifiers: ["win-\(winID.uuidString)"])
-    }
 }

@@ -27,8 +27,11 @@ struct RootTabView: View {
     }
 
     @EnvironmentObject private var sessionStore: SessionStore
+    @EnvironmentObject private var notificationsService: NotificationsService
+    @ObservedObject private var deepLinkRouter = DeepLinkRouter.shared
     @State private var selection: TabSelection = .feed
     @State private var showCamera: Bool = false
+    @State private var showPushPrompt: Bool = false
 
     private var selectionBinding: Binding<TabSelection> {
         Binding(
@@ -49,7 +52,7 @@ struct RootTabView: View {
                 .tag(TabSelection.feed)
                 .tabItem { Label("Feed", systemImage: "house") }
 
-            FriendsView()
+            FriendsView(currentUser: sessionStore.currentUser)
                 .tag(TabSelection.friends)
                 .tabItem { Label("Friends", systemImage: "person.2") }
 
@@ -62,16 +65,55 @@ struct RootTabView: View {
                 .tag(TabSelection.north)
                 .tabItem { Label("North", systemImage: "asterisk") }
 
-            ProfileView()
+            ProfileView(currentUser: sessionStore.currentUser)
                 .tag(TabSelection.profile)
                 .tabItem {
                     Label {
                         Text("Profile")
                     } icon: {
-                        Image("ProfileTabAvatarPlaceholder")
-                            .renderingMode(.original)
+                        if let avatar = sessionStore.currentUserAvatarImage {
+                            Image(uiImage: avatar)
+                                .renderingMode(.original)
+                        } else {
+                            Image("ProfileTabAvatarPlaceholder")
+                                .renderingMode(.original)
+                        }
                     }
                 }
+        }
+        .onAppear {
+            // #region agent log
+            DebugFileLog.log("H1", "RootTabView.onAppear", "TabView appeared", [
+                "hasAvatarURL": sessionStore.currentUser?.avatarURL != nil,
+                "avatarURL": sessionStore.currentUser?.avatarURL?.absoluteString ?? "<nil>",
+            ])
+            // #endregion
+        }
+        // Deep link routing from push taps.
+        .onChange(of: deepLinkRouter.targetTab) { _, newTab in
+            guard let newTab else { return }
+            switch newTab {
+            case .feed:     selection = .feed
+            case .friends:  selection = .friends
+            case .north:    selection = .north
+            case .profile:  selection = .profile
+            }
+            deepLinkRouter.targetTab = nil
+        }
+        // Post-first-win push permission prompt.
+        .onChange(of: notificationsService.shouldShowPermissionPrompt) { _, show in
+            if show { showPushPrompt = true }
+        }
+        .sheet(isPresented: $showPushPrompt, onDismiss: {
+            notificationsService.shouldShowPermissionPrompt = false
+        }) {
+            EnableNotificationsPromptView {
+                showPushPrompt = false
+                notificationsService.shouldShowPermissionPrompt = false
+            }
+            .environmentObject(notificationsService)
+            .presentationDetents([.fraction(0.55)])
+            .presentationDragIndicator(.hidden)
         }
         .fullScreenCover(isPresented: $showCamera) {
             let userID = sessionStore.currentUser?.id ?? supabase.auth.currentUser?.id ?? UUID()

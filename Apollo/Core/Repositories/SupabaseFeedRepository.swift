@@ -149,9 +149,24 @@ final class SupabaseFeedRepository: FeedRepository, @unchecked Sendable {
             let iso = ISO8601DateFormatter()
             iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 
+            // Fetch accepted friend IDs so the feed is filtered to friends + self.
+            // A fresh decoder is used here; the outer decoder is reused below.
+            let friendsResp = try await supabase
+                .from("friendships")
+                .select("friend_id")
+                .eq("user_id", value: currentUserID)
+                .eq("status", value: "accepted")
+                .execute()
+
+            struct FriendIDRow: Decodable { let friend_id: UUID }
+            let friendIDs = (try? JSONDecoder().decode([FriendIDRow].self, from: friendsResp.data))?
+                .map(\.friend_id) ?? []
+            let visibleIDs = friendIDs + [currentUserID]
+
             var query = supabase
                 .from("feed_posts")
                 .select()
+                .in("user_id", values: visibleIDs)
                 .gte("post_date", value: startStr)
                 .lt("post_date", value: endStr)
 

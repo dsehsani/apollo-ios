@@ -482,6 +482,11 @@ final class CameraViewModel {
                 CameraLog.log.info("usePhoto: commit succeeded postID=\(result.postID) photoID=\(result.photoID) totalWins=\(result.totalWins)")
                 NotificationCenter.default.post(name: .apolloFeedShouldRefresh, object: nil)
                 NotificationCenter.default.post(name: .apolloProfileShouldRefresh, object: nil)
+                NotificationCenter.default.post(
+                    name: .apolloPostCommitted,
+                    object: nil,
+                    userInfo: ["totalWins": result.totalWins]
+                )
                 self.resetAfterCommit()
             } catch {
                 CameraLog.log.error("usePhoto: commit failed: \(error.localizedDescription)")

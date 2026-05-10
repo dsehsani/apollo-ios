@@ -14,7 +14,10 @@ import SwiftUI
 
 @main
 struct ApolloApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     @StateObject private var sessionStore = SessionStore()
+    @StateObject private var notificationsService = NotificationsService.shared
 
     var body: some Scene {
         WindowGroup {
@@ -33,7 +36,18 @@ struct ApolloApp: App {
                 }
             }
             .environmentObject(sessionStore)
+            .environmentObject(notificationsService)
             .preferredColorScheme(.dark)
+            .onOpenURL { url in
+                DeepLinkRouter.shared.handle(url: url)
+            }
+            .onChange(of: sessionStore.currentUser?.id) { _, newID in
+                if let id = newID {
+                    notificationsService.start(currentUserID: id)
+                } else {
+                    notificationsService.stop()
+                }
+            }
         }
     }
 }

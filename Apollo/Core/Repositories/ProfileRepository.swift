@@ -9,12 +9,34 @@ import Foundation
 
 protocol ProfileRepositoryProtocol: Sendable {
     func fetchProfile(userID: UUID) async throws -> (ProfileUser, ProfilePost?)
+    func uploadAvatar(_ data: Data) async throws -> URL
+    func uploadBannerPhoto(_ data: Data) async throws -> URL
+    func setBannerPhotos(_ urls: [URL], type: String) async throws
+    func fetchOwnRecentWinPhotos(limit: Int) async throws -> [URL]
+}
+
+// Default no-op stubs so mocks only need to override what they care about.
+extension ProfileRepositoryProtocol {
+    func uploadAvatar(_ data: Data) async throws -> URL {
+        throw ProfileRepositoryError.unknown
+    }
+    func uploadBannerPhoto(_ data: Data) async throws -> URL {
+        throw ProfileRepositoryError.unknown
+    }
+    func setBannerPhotos(_ urls: [URL], type: String) async throws {
+        throw ProfileRepositoryError.unknown
+    }
+    func fetchOwnRecentWinPhotos(limit: Int) async throws -> [URL] {
+        throw ProfileRepositoryError.unknown
+    }
 }
 
 enum ProfileRepositoryError: Error, Sendable {
     case network
     case notFound
     case unknown
+    case compressionFailed
+    case uploadFailed(reason: String)
 }
 
 // MARK: - Mock
