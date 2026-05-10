@@ -47,7 +47,7 @@ struct RootTabView: View {
                 .tag(TabSelection.feed)
                 .tabItem { Label("Feed", systemImage: "house") }
 
-            FriendsTabPlaceholderView()
+            FriendsView()
                 .tag(TabSelection.friends)
                 .tabItem { Label("Friends", systemImage: "person.2") }
 
