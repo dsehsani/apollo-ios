@@ -94,6 +94,8 @@ final class FeedViewModel {
             hasMore = page.hasMore
             quote = q
             phase = derivePhase(from: page)
+
+            await mergeReactionSummaries(for: page.posts.map(\.id))
         } catch {
             phase = .error
             transientErrorMessage = "Couldn't load your feed."
@@ -134,8 +136,27 @@ final class FeedViewModel {
             posts.append(contentsOf: page.posts)
             nextCursor = page.nextCursor
             hasMore = page.hasMore
+            await mergeReactionSummaries(for: page.posts.map(\.id))
         } catch {
             transientErrorMessage = "Couldn't load more posts."
+        }
+    }
+
+    /// Batch-fetches per-emoji counts and current-user emoji, then merges into posts.
+    /// Failures degrade gracefully — counts stay empty rather than failing the feed.
+    private func mergeReactionSummaries(for postIDs: [UUID]) async {
+        guard !postIDs.isEmpty else { return }
+        do {
+            let summaries = try await repository.fetchReactionSummaries(forPostIDs: postIDs)
+            let byID = Dictionary(summaries.map { ($0.postID, $0) }, uniquingKeysWith: { a, _ in a })
+            for id in postIDs {
+                guard let idx = posts.firstIndex(where: { $0.id == id }),
+                      let summary = byID[id] else { continue }
+                posts[idx].reactionCountsByEmoji = summary.countsByEmoji
+                posts[idx].currentUserReaction   = summary.currentUserEmoji
+            }
+        } catch {
+            // Silently degrade: counts stay at default [:], UI falls back to reactions array.
         }
     }
 
@@ -174,13 +195,27 @@ final class FeedViewModel {
             guard reaction.userID != currentUserID,
                   let idx = posts.firstIndex(where: { $0.id == reaction.postID }) else { return }
             var post = posts[idx]
-            post.reactions.removeAll { $0.userID == reaction.userID }
+            // Remove any prior reaction from this user then add new one.
+            if let prior = post.reactions.first(where: { $0.userID == reaction.userID }) {
+                post.reactionCountsByEmoji[prior.emoji, default: 1] -= 1
+                if post.reactionCountsByEmoji[prior.emoji] == 0 {
+                    post.reactionCountsByEmoji.removeValue(forKey: prior.emoji)
+                }
+                post.reactions.removeAll { $0.userID == reaction.userID }
+            }
             post.reactions.append(reaction)
+            post.reactionCountsByEmoji[reaction.emoji, default: 0] += 1
             posts[idx] = post
 
         case .removed(let reactionID, let postID):
             guard let idx = posts.firstIndex(where: { $0.id == postID }) else { return }
             var post = posts[idx]
+            if let removed = post.reactions.first(where: { $0.id == reactionID }) {
+                post.reactionCountsByEmoji[removed.emoji, default: 1] -= 1
+                if post.reactionCountsByEmoji[removed.emoji] == 0 {
+                    post.reactionCountsByEmoji.removeValue(forKey: removed.emoji)
+                }
+            }
             post.reactions.removeAll { $0.id == reactionID }
             posts[idx] = post
         }
@@ -239,6 +274,21 @@ final class FeedViewModel {
     private func applyReactionOptimistically(postID: UUID, newEmoji: String?) {
         guard let idx = posts.firstIndex(where: { $0.id == postID }) else { return }
         var post = posts[idx]
+
+        // Adjust count map: decrement old emoji, increment new one.
+        let oldEmoji = post.currentUserReaction
+            ?? post.reactions.first(where: { $0.userID == currentUserID })?.emoji
+        if let old = oldEmoji {
+            post.reactionCountsByEmoji[old, default: 1] -= 1
+            if post.reactionCountsByEmoji[old] == 0 {
+                post.reactionCountsByEmoji.removeValue(forKey: old)
+            }
+        }
+        if let new = newEmoji {
+            post.reactionCountsByEmoji[new, default: 0] += 1
+        }
+
+        // Keep reactions array in sync for ReactionsBreakdownSheet compatibility.
         post.reactions.removeAll { $0.userID == currentUserID }
         if let newEmoji {
             post.reactions.append(

@@ -63,10 +63,59 @@ struct Post: Identifiable, Hashable, Sendable {
     var commentCount: Int
     /// Raw emoji string for the current user's reaction, e.g. "❤️" or "🦾" for custom.
     var currentUserReaction: String?
+    /// Authoritative emoji → count map loaded from Supabase. Empty until populated.
+    var reactionCountsByEmoji: [String: Int]
+
+    init(
+        id: UUID,
+        user: PostUser,
+        createdAt: Date,
+        caption: String,
+        photoCount: Int,
+        mainPhotoURL: URL?,
+        towerPhotos: [PhotoSlot],
+        winsCount: Int,
+        reactions: [Reaction],
+        commentCount: Int,
+        currentUserReaction: String?,
+        reactionCountsByEmoji: [String: Int] = [:]
+    ) {
+        self.id = id
+        self.user = user
+        self.createdAt = createdAt
+        self.caption = caption
+        self.photoCount = photoCount
+        self.mainPhotoURL = mainPhotoURL
+        self.towerPhotos = towerPhotos
+        self.winsCount = winsCount
+        self.reactions = reactions
+        self.commentCount = commentCount
+        self.currentUserReaction = currentUserReaction
+        self.reactionCountsByEmoji = reactionCountsByEmoji
+    }
 
     var reactionsByEmoji: [String: Int] {
         Dictionary(grouping: reactions, by: { $0.emoji }).mapValues { $0.count }
     }
+
+    /// Display-ordered pairs for the reaction strip. When `reactionCountsByEmoji`
+    /// is populated (Supabase data) it is used; otherwise falls back to `reactions`
+    /// so previews and mock data continue to work without fixture changes.
+    var orderedReactionCounts: [(emoji: String, count: Int)] {
+        let source = reactionCountsByEmoji.isEmpty ? reactionsByEmoji : reactionCountsByEmoji
+        return source
+            .sorted { lhs, rhs in
+                lhs.value != rhs.value ? lhs.value > rhs.value : lhs.key < rhs.key
+            }
+            .map { (emoji: $0.key, count: $0.value) }
+    }
+}
+
+/// Aggregated per-post reaction data fetched from Supabase in a single batch.
+struct PostReactionSummary: Sendable {
+    let postID: UUID
+    var countsByEmoji: [String: Int]
+    var currentUserEmoji: String?
 }
 
 struct Reaction: Identifiable, Hashable, Sendable {

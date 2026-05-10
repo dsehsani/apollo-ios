@@ -138,6 +138,22 @@ final class MockFeedRepository: FeedRepository, @unchecked Sendable {
         }
     }
 
+    func fetchReactionSummaries(forPostIDs postIDs: [UUID]) async throws -> [PostReactionSummary] {
+        try await Task.sleep(nanoseconds: 80_000_000)
+        let allPosts = lock.withLock { todayPosts + yesterdayPosts }
+        return postIDs.compactMap { id in
+            guard let post = allPosts.first(where: { $0.id == id }) else { return nil }
+            let counts = Dictionary(grouping: post.reactions, by: { $0.emoji }).mapValues { $0.count }
+            guard !counts.isEmpty else { return nil }
+            return PostReactionSummary(
+                postID: id,
+                countsByEmoji: counts,
+                currentUserEmoji: post.currentUserReaction
+                    ?? post.reactions.first(where: { $0.userID == currentUserID })?.emoji
+            )
+        }
+    }
+
     func deletePost(postID: UUID) async throws {
         try await Task.sleep(nanoseconds: 200_000_000)
         lock.withLock {

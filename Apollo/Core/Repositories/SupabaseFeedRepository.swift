@@ -10,7 +10,48 @@
 import Foundation
 import Supabase
 
-// MARK: - Decodable row from the feed_posts view
+// MARK: - Decodable rows
+
+private struct ReactionSummaryRow: Decodable {
+    let post_id: UUID
+    let emoji: String
+    let user_id: UUID
+}
+
+/// Embedded `users(...)` on `reactions` rows (same shape as comments).
+private struct ReactionBreakdownUserEmbed: Decodable {
+    let username: String
+    let avatar_url: String?
+}
+
+private struct ReactionBreakdownDBRow: Decodable {
+    let id: UUID
+    let post_id: UUID
+    let user_id: UUID
+    let emoji: String
+    let created_at: String
+    let users: ReactionBreakdownUserEmbed?
+
+    enum CodingKeys: String, CodingKey {
+        case id, post_id, user_id, emoji, created_at, users
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        post_id = try c.decode(UUID.self, forKey: .post_id)
+        user_id = try c.decode(UUID.self, forKey: .user_id)
+        emoji = try c.decode(String.self, forKey: .emoji)
+        created_at = try c.decode(String.self, forKey: .created_at)
+        if let embed = try? c.decode(ReactionBreakdownUserEmbed.self, forKey: .users) {
+            users = embed
+        } else if let arr = try? c.decode([ReactionBreakdownUserEmbed].self, forKey: .users), let first = arr.first {
+            users = first
+        } else {
+            users = nil
+        }
+    }
+}
 
 private struct FeedPostRow: Decodable {
     let id: UUID
@@ -193,10 +234,74 @@ final class SupabaseFeedRepository: FeedRepository, @unchecked Sendable {
             .execute()
     }
 
-    // GET /posts/:post_id/reactions
+    // GET /posts/:post_id/reactions — list reactors with profile fields for breakdown sheet.
     func fetchReactionsBreakdown(postID: UUID) async throws -> [Reaction] {
-        // TODO: select reactions joined with users for post_id.
-        throw FeedRepositoryError.unknown
+        do {
+            let response = try await supabase
+                .from("reactions")
+                .select("""
+                    id, post_id, user_id, emoji, created_at,
+                    users(username, avatar_url)
+                """)
+                .eq("post_id", value: postID)
+                .order("created_at", ascending: false)
+                .limit(100)
+                .execute()
+
+            let decoder = JSONDecoder()
+            let rows = try decoder.decode([ReactionBreakdownDBRow].self, from: response.data)
+            return rows.map(mapReactionBreakdownRow)
+        } catch let error as FeedRepositoryError {
+            throw error
+        } catch {
+            throw FeedRepositoryError.network
+        }
+    }
+
+    private func mapReactionBreakdownRow(_ r: ReactionBreakdownDBRow) -> Reaction {
+        let author = r.users
+        return Reaction(
+            id: r.id,
+            postID: r.post_id,
+            userID: r.user_id,
+            username: author?.username ?? "user",
+            avatarURL: author?.avatar_url.flatMap(URL.init(string:)),
+            emoji: r.emoji,
+            createdAt: parseTimestamp(r.created_at) ?? Date()
+        )
+    }
+
+    // Batch query: emoji counts + current user's emoji for a list of post IDs.
+    func fetchReactionSummaries(forPostIDs postIDs: [UUID]) async throws -> [PostReactionSummary] {
+        guard !postIDs.isEmpty else { return [] }
+
+        let response = try await supabase
+            .from("reactions")
+            .select("post_id, emoji, user_id")
+            .in("post_id", values: postIDs)
+            .execute()
+
+        let rows = try JSONDecoder().decode([ReactionSummaryRow].self, from: response.data)
+
+        var countsByPost: [UUID: [String: Int]] = [:]
+        var myEmojiByPost: [UUID: String] = [:]
+
+        for row in rows {
+            countsByPost[row.post_id, default: [:]][row.emoji, default: 0] += 1
+            if row.user_id == currentUserID {
+                myEmojiByPost[row.post_id] = row.emoji
+            }
+        }
+
+        // Return a summary for every post that has at least one reaction.
+        return postIDs.compactMap { id in
+            guard let counts = countsByPost[id] else { return nil }
+            return PostReactionSummary(
+                postID: id,
+                countsByEmoji: counts,
+                currentUserEmoji: myEmojiByPost[id]
+            )
+        }
     }
 
     // Soft delete: posts.deleted_at = now()

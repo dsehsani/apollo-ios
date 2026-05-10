@@ -83,8 +83,9 @@ struct PostCard: View {
             }
             .padding(.top, 7)
 
-            ReactionsLine(
-                reactions: post.reactions,
+            GroupedReactionsLine(
+                pairs: post.orderedReactionCounts,
+                currentUserReaction: post.currentUserReaction,
                 onTap: { onReactionsLineTap(post) }
             )
             .padding(.top, 23)
